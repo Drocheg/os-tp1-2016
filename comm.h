@@ -1,9 +1,9 @@
-typedef struct sConnection * tConnection
+typedef struct connection_t * Connection
 
 
-tConnection openConnection();
+Connection openConnection();
 
-void closeConnection(tConnection connection);
+void closeConnection(Connection connection);
 
 
 

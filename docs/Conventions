@@ -1,5 +1,5 @@
 Conventions:
 	
 	- Struct implementations have this type of names: struct_name_t
-	- typedef struct struct_name_t * structName
+	- typedef struct struct_name_t * StructName
 
