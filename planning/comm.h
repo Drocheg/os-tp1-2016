@@ -1,4 +1,11 @@
+typedef struct connection_t * Connection
 
-typedef struct sConnection * tConnection
 
-tConnection openConnection();
+Connection openConnection();
+
+void closeConnection(Connection connection);
+
+
+
+void listenToRequest();
+
