@@ -13,5 +13,5 @@ struct connection_t
 
 Connection openConnection(Server server) {
 
-	Connection connection = malloc(sizeof(connection));
+	Connection connection = malloc(sizeof(*connection));
 }
