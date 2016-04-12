@@ -1,8 +1,11 @@
+#ifndef comm_h
+#define comm_h
+
 typedef struct server_t* Server
 typedef struct connection_t * Connection
 typedef struct request_t * Request;
 typedef struct response_T * Response;
-typedef struct message_t * Message // Maybe we could use the same structre for request and response
+typedef struct message_t * Message /* Maybe we could use the same structre for request and response */
 
 
 
@@ -27,3 +30,4 @@ Message request(Connection connection, Message message);
  */
 void listenToRequest(Connection connection);
 
+#endif /* comm_h */
