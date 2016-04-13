@@ -46,11 +46,11 @@ int main(void) {
 		exit(1);
 	}
 
-	// Here goes a function to log that the service is running (communicate to logging server)
+	
 	while (1) {
-		//Wait till client wants to connect
+		/* Main Loop */
 	}
-	// Here goes a function to log that the service is down (communicate to logging server)
+	return 0;
 }
 
 
