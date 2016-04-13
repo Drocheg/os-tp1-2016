@@ -14,12 +14,12 @@ struct connection_t {
     int serverPID;
 };
 
-Connection openConnection(Server server) {
-
-	Connection connection = malloc(sizeof(*connection));
-	int inPipe = pipe(connection->inPipe), outPipe = pipe(connection->outPipe);
-	if (inPipe != 0 || outPipe != 0) {
-		exit(1); /* pipe creation wasn't completed */
-	}
-
-}
+//Connection openConnection(Server server) {
+//
+//	Connection connection = malloc(sizeof(*connection));
+//	int inPipe = pipe(connection->inPipe), outPipe = pipe(connection->outPipe);
+//	if (inPipe != 0 || outPipe != 0) {
+//		exit(1); /* pipe creation wasn't completed */
+//	}
+//
+//}

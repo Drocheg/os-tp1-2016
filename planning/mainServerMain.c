@@ -39,20 +39,20 @@ static int configure() {
 }
 
 
-int main(void) {
-	
-	// Start logging server (maybe using a fork and execve)
-	// Start SQLite
-	if (configure()) {
-		exit(1);
-	}
-
-	
-	while (1) {
-		/* Main Loop */
-	}
-	return 0;
-}
+//int main(void) {
+//	
+//	// Start logging server (maybe using a fork and execve)
+//	// Start SQLite
+//	if (configure()) {
+//		exit(1);
+//	}
+//
+//	
+//	while (1) {
+//		/* Main Loop */
+//	}
+//	return 0;
+//}
 
 
 
