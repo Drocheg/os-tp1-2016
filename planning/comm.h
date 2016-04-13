@@ -17,7 +17,7 @@ Connection openConnection(Server server);
 /*
  * Closes a connection (i.e. finishes connection)
  */
-void closeConnection(Connection connection);
+int closeConnection(Connection connection);
 
 /*
  * Makes a request through connection, sending a message

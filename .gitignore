@@ -1,5 +1,10 @@
+#Netbeans data
+nbproject/*
+*.dep.inc
+
 # Object files
 *.o
+*.o.d
 *.ko
 *.obj
 *.elf

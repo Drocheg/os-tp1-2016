@@ -1,0 +1,3 @@
+/tmp/nombremuylargoquenotienecolisiones
+
+//serverFIFO:/tmp/nombremuylargoquenotienecolisiones
