@@ -16,7 +16,7 @@ static void signalHandler(int signum, siginfo_t *siginfo, void *context) {
 		} else {
 
 			printf("I'm forked server\n");
-			 /*Here goes an execve with the bin file of the forked server */
+			/*Here goes an execve with the bin file of the forked server */
 		}
 	}
 }
@@ -33,6 +33,7 @@ static int configure() {
 	act.sa_sigaction = &signalHandler;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_RESTART | SA_SIGINFO;
+
 	return sigaction(SIGUSR1, &act, NULL);
 
 }
