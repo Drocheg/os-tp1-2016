@@ -13,6 +13,7 @@ struct connection_t {
 };
 
 
+
 /*
  * The general idea for OPENING a connection is as follows:
  * 1) Client creates FIFO - done
@@ -22,12 +23,13 @@ struct connection_t {
  * 4) Client and Server can now communicate through FIFO created by Client.
  */
 Connection openConnection(Server server) {
+    
     Connection connection = malloc(sizeof(*connection));
     char path[16];
     int pid = getpid();
     sprintf(path, "/tmp/%i", pid);
     //0666 == anybody can read and write
-    if(mkfifo(path, 0666)) {    //Error
+    if (mkfifo(path, 0666)) {    //Error
         fprintf(stderr, "Error creating client FIFO.");
     }
     printf("Successfully created FIFO at %s", path);
@@ -46,6 +48,7 @@ Connection openConnection(Server server) {
  * also call remove(fifopath) so as to actually remove the "file."
  */
 int closeConnection(Connection connection) {
+    
     FILE *f = fopen(connection->path, "w");
     char *msg = "CLOSE";
     /*
@@ -57,3 +60,6 @@ int closeConnection(Connection connection) {
     remove(connection->path);
     printf("Successfully closed FIFO %s", connection->path);
 }
+
+
+
