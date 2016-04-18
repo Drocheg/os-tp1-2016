@@ -1,7 +1,7 @@
 #include "database.h"
 #include <stdio.h>
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName){
+static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
     int i;
     for(i=0; i<argc; i++){
         printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
@@ -28,7 +28,6 @@ sqlite3 *connectToDB() {
     return result;
 }
 
-int disconnectFromDB(sqlite3 *connection)// </editor-fold>
- {
+int disconnectFromDB(sqlite3 *connection) {
     return sqlite3_close(connection);
 }

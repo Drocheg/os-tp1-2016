@@ -7,23 +7,32 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h> //For sleep
 #include "config.h"
 #include "comm.h"
 #include "database.h"
 
 int main(int argc, char** argv) {
-//    printf("Server config FIFO: %s", getServerAddress());
-//    Connection c = openConnection(NULL);
-//    fflush(stdout);
-//    sleep(5);
-//    closeConnection(c);
-//    fflush(stdout);
-//    sleep(5);
+    /*
+     * Connection test - when running, open a console and CD into /tmp
+     * When the FIFOs are created, run
+     * cat (pid)-out to read first message
+     * cat (pid)-out again to read CLOSE message
+     */
+    printf("Server config FIFO: %s", getServerAddress());
+    Connection c = conn_open(getServerAddress());
+    fflush(stdout);
+    sleep(5);
+    conn_send(c, "Hello, server!", 15);
+    sleep(15);
+    conn_close(c);
+    fflush(stdout);
+    sleep(5);
+    remove(getServerAddress());
     
-    sqlite3 *db = connectToDB();
-    printf("Successfully connected to database.\n");
-    printf("Disconnecting from DB returned %i\n", disconnectFromDB(db));
-    return 0;
+//    sqlite3 *db = connectToDB();
+//    printf("Successfully connected to database.\n");
+//    printf("Disconnecting from DB returned %i\n", disconnectFromDB(db));
     
     return 0;
 }
