@@ -1,3 +1,77 @@
+#include "comm.h"
+#include "config.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+
+#ifndef ATTEMPTS
+#define ATTEMPTS 10
+#endif
+
+#ifndef BLOCK
+#define BLOCK 1024
+#endif
+
+
+struct connection_t {
+	char * ip;
+	unsigned short port;
+	int socketfd;
+
+};
+
+
+
+
+Connection conn_open(const char* address) {
+
+	Connection connection = malloc(sizeof(*connection));
+	struct sockaddr_in server_ip;
+
+	connection->ip = getIP(address);
+	connection->port = getPort(address);
+	connection->socketfd socketFD = socket(PF_INET, SOCK_STREAM, 0);
+
+	server_ip.sin_family = AF_INET;
+	server_ip.sin_port = connection->port;
+	inet_pton(AF_INET, connection->ip, &ip_4.sin_addr);
+	connect(connection->socketfd, (struct sockaddr *)&server_ip, sizeof(server_ip));
+
+
+	return connection;
+
+}
+
+int conn_close(Connection connection) {
+	comm_send(connection, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
+	free(connection);
+	return 1;
+}
+
+
+int conn_send(const Connection connection, const void* data, const size_t length) {
+
+	int i = 0;
+	while (i++ < ATTEMPTS) {
+		if (!(length - write(connection->socketfd, data, length))) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
+int conn_receive(const Connection connection, char** data, size_t* length) {
+
+	
+	read(connection->socketfd, length, sizeof(int));
+
+	data = malloc(*length);
+	return !(*length - read(connection->socketfd, *data, *length));
+
+}
+
+
 /*
  * The general idea for opening a connection with SOCKETS is as follows:
  * 1) Client creates socket connection with the server via localhost (server port defined in config file).
