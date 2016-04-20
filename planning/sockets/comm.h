@@ -1,6 +1,8 @@
 #ifndef comm_h
 #define comm_h
 
+#include <sys/types.h>
+
 
 typedef struct connection_t* Connection;
 
@@ -28,6 +30,11 @@ typedef struct connection_t* Connection;
 
 /*
  * Creates a connection between a client and a server.
+ * Assumes address is a Null-terminated string
+ * For IPv4 network address, use "ddd.ddd.ddd.ddd:ppppp" format, where ddd is a decimal number
+ * between 0 and 255, and ppppp is a decimal number from 0 to 65535. It must be a NULL-terminated
+ * string
+ * For FIFOs, use ...
  */
 Connection conn_open(const char* address);
 
