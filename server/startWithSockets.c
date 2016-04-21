@@ -96,8 +96,6 @@ static int setup(char * port, ServerConnection * serverConnection) {
 }
 
 
-
-
 int start(char * address) {
 
 	ServerConnection serverConnection;
@@ -110,7 +108,4 @@ int start(char * address) {
     		forkedServer(new_fd);
     	}
     }
-
-
-
 }
