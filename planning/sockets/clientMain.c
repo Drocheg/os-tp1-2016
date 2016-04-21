@@ -1,6 +1,7 @@
 #include "comm.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 char * getLine() {
 
@@ -29,7 +30,7 @@ int main(int argc, char *argv[]) {
 	while(1) {
 
 		char * aux = getLine();
-		conn_send(connection, getLine(), sizeof(aux));
+		conn_send(connection, aux, strlen(aux) + 1);
 		conn_receive(connection, &rta, &length);
 		printf("%s\n", rta);
 	}

@@ -1,5 +1,0 @@
-commWithSockets.c:87:54: error: expected ';' after expression
-        write(connection->socketfd, &length, sizeof(size_t))
-                                                            ^
-                                                            ;
-1 error generated.

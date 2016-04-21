@@ -11,26 +11,12 @@
 
 
 
-/*
- * Gets the port number from the address string
- * Assumes address is NULL-terminated
- */
-static unsigned short getPort(const char * address) {
-
-	int i = 0;
-	while (address[i++] != ':');
-	return (unsigned short)atoi(&(address[i + 1]));
-
-}
-
-
 static void readFromConnection(int fd, void** data) {
 
-	int length = 0;
+	size_t length = 0;
 	read(fd, &length, sizeof(size_t));
 	*data = malloc(length);
-	read(fd, data, length);
-
+	read(fd, *data, length);
 }
 
 static void writeToConnection(int fd, char * message) {
@@ -67,12 +53,11 @@ static void start(unsigned short port) {
 
 
     bind(listenfd, (struct sockaddr*)&main_server_ip, sizeof(main_server_ip));
-    listen(listenfd, 32);
+    listen(listenfd, 10);
 
     while(1) {
     	int new_fd = accept(listenfd, (struct sockaddr*)&forked_server_ip, &aux);
     	if (fork() > 0) {
-    		printf("I'm here\n");
     		forkedServer(new_fd);
     	}
     }
@@ -82,10 +67,14 @@ static void start(unsigned short port) {
 
 int main(int argc, char *argv[]) {
 
+	unsigned short port = atoi(argv[1]);
+
+	printf("Now listening on port %d\n", port);
+
 
 	
 
-	start((unsigned short)getPort(argv[1]));
+	start(port);
 
 	return 0;
 
