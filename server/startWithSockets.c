@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
+#include "../common/data.h"
 
 typedef struct srv_connection_t * ServerConnection;
 
@@ -18,38 +19,32 @@ struct srv_connection_t {
 };
 
 
-struct data_t {
-	void * data;
-	size_t size;
-};
 
+Data readFromConnection(int fd) {
 
-static struct data_t readFromConnection(int fd) {
-
-	struct data_t data;
-
-	data.size = 0;
-	read(fd, &(data.size), sizeof(size_t));
-	data.data = malloc(data.size);
-	read(fd, data.data, data.size);
+    Data data = newData(NULL, 0, 0); /* Will be replaced by read data */
+	size_t size = 0;
+    
+	read(fd, &(size), sizeof(size_t));
+	read(fd, data, size);
 
 	return data;
 }
 
-static void writeToConnection(int fd, struct data_t * data) {
+static void writeToConnection(int fd, Data data) {
+    
+    size_t size = getSize(data);
 
-	write(fd, &(data->size), sizeof(size_t));
-	write(fd, data->data, data->size);
+	write(fd, &size, sizeof(size_t));
+	write(fd, getData(data), getSize(data));
 }
 
 static void forkedServer(int socket_fd) {
 
 	while(1) {
-		struct data_t request = readFromConnection(socket_fd);
-		struct data_t response;
-		response.data = (char *) "[OK]";
-		response.size = strlen((char*)response.data) + 1;
-		writeToConnection(socket_fd, &response);
+		Data request = readFromConnection(socket_fd);
+        Data response = newData((void *) "[OK]", sizeof("[OK]"), STRING);
+		writeToConnection(socket_fd, response);
 	}
 }
 
