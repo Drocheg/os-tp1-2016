@@ -1,6 +1,11 @@
 #ifndef comm_h
 #define comm_h
 
+struct connection_t {
+    char* outFIFOPath;
+    char* inFIFOPath;
+};
+
 typedef struct connection_t* Connection;
 
 //FIFOs
@@ -27,6 +32,10 @@ typedef struct connection_t* Connection;
  * Creates a connection between a client and a server.
  */
 Connection conn_open(char* address);
+
+//int conn_accept(Connection connection);
+//
+//Connection conn_setup(int ip, int port);
 
 /*
  * Closes a connection (i.e. finishes connection)

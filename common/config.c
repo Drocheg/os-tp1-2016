@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define PATH "config.txt"
+#define PATH "configWithFIFOs.txt"
 
 struct config_t {
     char * serverFIFOPath;

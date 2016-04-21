@@ -8,10 +8,7 @@
 #include <string.h>
 #include <stdint.h>
 
-struct connection_t {
-    char* outFIFOPath;
-    char* inFIFOPath;
-};
+//TODO ponele que este aca
 
 /*
  * The general idea for opening a connection with FIFOs is as follows:
@@ -55,12 +52,13 @@ Connection conn_open(char* address) {
     //	connection->clientPID = pid;
     //Write FIFO paths on main server FIFO
     FILE *f = fopen(address, "a");
-    int l = strlen(connection->outFIFOPath);
-    fwrite(&l, sizeof(l), 1, f);
-    fwrite(connection->outFIFOPath, l, 1, f);
-    l = strlen(connection->inFIFOPath);
-    fwrite(&l, sizeof(l), 1, f);
-    fwrite(connection->inFIFOPath, l, 1, f);
+    int len = strlen(connection->outFIFOPath)+1;
+    fwrite(&len, sizeof(len), 1, f);
+    fwrite(connection->outFIFOPath, len-1, 1, f);
+    len = strlen(connection->inFIFOPath)+1;
+    fwrite(&len, sizeof(len), 1, f);
+    fwrite(connection->inFIFOPath, len-1, 1, f);
+    fclose(f);
     printf("Successfully wrote connection info on server for PID %s.\n", pid);
     return connection;
 }

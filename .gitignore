@@ -1,6 +1,14 @@
 #Netbeans data
 nbproject/*
-*.dep.inc
+.dep.inc
+.cproject
+.dropbox.attr
+.idea/*
+.settings/*
+.prokect
+Makefile-netbeans
+.project
+CMakeLists.txt
 
 # Object files
 *.o

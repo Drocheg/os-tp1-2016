@@ -1,3 +1,0 @@
-/tmp/mainserverFIFO
-
-//serverFIFO:/tmp/nombremuylargoquenotienecolisiones

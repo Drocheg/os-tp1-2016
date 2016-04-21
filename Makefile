@@ -1,15 +1,15 @@
-HEADERS_COMMON = planning/comm.h planning/config.h planning/lib.h
-OBJECTS_COMMON = planning/config.o planning/lib.o
+HEADERS_COMMON = common/comm.h common/config.h common/lib.h
+OBJECTS_COMMON = common/config.o common/lib.o
 
-HEADERS_SERVER = SQLite/src/sqlite3.h planning/database.h
-OBJECTS_SERVER = SQLite/src/sqlite3.o planning/database.o
+HEADERS_SERVER = SQLite/src/sqlite3.h server/database.h
+OBJECTS_SERVER = SQLite/src/sqlite3.o server/database.o
 
 HEADERS_CLIENT = 
-OBJECTS_CLIENT = planning/client.o planning/commWithFIFOs.o
+OBJECTS_CLIENT = client/clientWithFIFOs.o common/commWithFIFOs.o
 
 
 CC = gcc
-CFLAGS = -g -Wall -std=c99
+CFLAGS = -g -Wall -std=c99 -I common
 #-pthread option for multithreading
 
 default: client
