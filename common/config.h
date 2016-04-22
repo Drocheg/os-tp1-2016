@@ -8,9 +8,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define CLOSE_MESSAGE "KTHXBAI"
-#define OK_MESSAGE "KCOOL"
-
 typedef struct config_t * Config;
 
 Config loadConfig();

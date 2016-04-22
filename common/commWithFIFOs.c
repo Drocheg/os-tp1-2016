@@ -1,5 +1,6 @@
-#include "comm.h"
-#include "config.h"
+#include <comm.h>
+#include <lib.h>
+#include <config.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -7,28 +8,31 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdint.h>
-
-//TODO ponele que este aca
-
-/*
- * The general idea for opening a connection with FIFOs is as follows:
- * 1) Client creates FIFO connection with the server (path defined in config file).
- * 2) Client creates 2 FIFOs and sends the two file paths to the server:
- *      2.1) (pid)-out for sending messages (outgoing for this process)
- *      2.2) (pid)-in for receiving messages (incoming for this process)
- *      NOTE: (pid) is the current process' PID. For now this means every
- *      process can only have 1 open connection to the server, otherwise
- *      different servers will start breaking the FIFOs.
- * 3) Server opens the 2 FIFOs and forks, setting up the FIFOs appropriately (-out is in for reading, -in is out for writing)
- * 4) Client also opens the 2 FIFOs, setting them up appropriately (-out is in for writing, -in is out for reading)
- * 5) Voilà!
- */
-
+#include <fcntl.h>
 
 /*
  * Creates a connection between the current process and a server.
+ * The procedure is as follows:
+ * 1) Client creates FIFO for reading (pid-in) and writing (pid-out),
+ * where (pid) is the current process ID.
+ * 2) Client opens pid-in for reading non-blockingly. Does NOT
+ * open pid-out.
+ * 3) Client sends the two FIFO paths to the main server (address
+ * defined in config file):
+ *      3.1) (pid)-out
+ *      3.2) (pid)-in
+ *      NOTE: For now this means every process can only have 1 open
+ *      connection to the server, otherwise different servers will
+ *      start stepping on each other's feet.
+ * 4) Main server forks and reads FIFO information backwards
+ * (pid-out is in for server, pid-in is out).
+ * 5) Forked server opens (pid)-in for writing and (pid)-out for reading, and
+ * sends ACK message to client.
+ * 6) Client receives ACK, opens (pid)-out for writing (if server hadn't opened
+ * it for reading, it would block or fail if opening non-block)
+ * 7) Voilà! Client and server can communicate.
  */
-Connection conn_open(char* address) {
+Connection conn_open(const char* address) {
     Connection connection = malloc(sizeof(*connection));
     //TODO make this variable, could be 64-bit int, use sizeof(pid_t)
     char pid[11];   //Max 32-bit int size = 10 + 1 for null terminator
@@ -45,42 +49,48 @@ Connection conn_open(char* address) {
     if (mkfifo(connection->inFIFOPath, 0666)) {	//Error
         fprintf(stderr, "Error creating incoming FIFO.");
     }
+    connection->inFD = open(connection->inFIFOPath, O_RDONLY|O_NONBLOCK);
+    int flagThing = fcntl(connection->inFD, F_SETFL, fcntl(connection->inFD, F_GETFL)&~O_NONBLOCK);	//Remove nonblocking flag
+    connection->outFD = open(connection->outFIFOPath, O_WRONLY|O_NONBLOCK);	//This will probably fail TODO remove
+    flagThing = fcntl(connection->outFD, F_SETFL, fcntl(connection->outFD, F_GETFL)&~O_NONBLOCK);	//Remove nonblocking flag
     printf("Successfully created FIFOs for process with PID %s\n", pid);
-    //MALLOCS hacer asi
-    //	connection->path = malloc(strlen(path)+1);
-    //	strcpy(connection->path, path);
-    //	connection->clientPID = pid;
     //Write FIFO paths on main server FIFO
-    FILE *f = fopen(address, "a");
-    int len = strlen(connection->outFIFOPath)+1;
-    fwrite(&len, sizeof(len), 1, f);
-    fwrite(connection->outFIFOPath, len-1, 1, f);
+    int fd = open(address, O_WRONLY);
+    size_t len = strlen(connection->outFIFOPath)+1;
+    ensureWrite(&len, sizeof(len), fd);
+    ensureWrite(connection->outFIFOPath, len, fd);
     len = strlen(connection->inFIFOPath)+1;
-    fwrite(&len, sizeof(len), 1, f);
-    fwrite(connection->inFIFOPath, len-1, 1, f);
-    fclose(f);
-    printf("Successfully wrote connection info on server for PID %s.\n", pid);
+    ensureWrite(&len, sizeof(len), fd);
+    ensureWrite(connection->inFIFOPath, len, fd);
+    close(fd);
+    printf("Successfully wrote connection info on server for PID %s. Waiting for OK...", pid);
+    fflush(stdout);
+    char *ack;
+    len = strlen(MESSAGE_OK)+1;
+    conn_receive(connection, (void **)&ack, &len);
+    if(strcmp(ack, MESSAGE_OK) == 0) {	//Server forked and listening, open write FIFO again
+    	printf("received.\n");
+    	connection->outFD = open(connection->outFIFOPath, O_WRONLY);
+    }
+    else {
+    	printf("Error, received something else: %s\n", ack);
+    }
     return connection;
 }
 
 /*
  * Closes a connection (i.e. finishes connection)
  */
-int conn_close(Connection connection) {
-    char *msg = CLOSE_MESSAGE;
-    /*
-     * BLOCKING: This won't run unless there's another process reading from the FIFO
-     * If testing this, run:
-     * cat /path/to/fifo
-     * and you'll see the data and the program will close the connection
-     */
-    conn_send(connection, msg, strlen(msg)+1);
-    remove(connection->outFIFOPath);		//Removes the file
-    remove(connection->inFIFOPath);
-    printf("Successfully closed FIFOs %s and %s", connection->inFIFOPath, connection->outFIFOPath);
-    free(connection->outFIFOPath);
-    free(connection->inFIFOPath);
-    free(connection);
+int conn_close(Connection conn) {
+	conn_send(conn, MESSAGE_CLOSE, strlen(MESSAGE_CLOSE)+1);
+	close(conn->outFD);
+	close(conn->inFD);
+    remove(conn->outFIFOPath);		//Removes the file
+    remove(conn->inFIFOPath);
+    printf("Connection closed.\n");
+    free(conn->outFIFOPath);
+    free(conn->inFIFOPath);
+    free(conn);
     return 1;
 }
 
@@ -90,33 +100,24 @@ int conn_close(Connection connection) {
  * 2) Sends message data (of the specified length)
  * Returns 0 on error or some other number on success.
  */
-int conn_send(Connection connection, char* data, int length) {
-    printf("Sending %i bytes to %s...", length, connection->outFIFOPath);
-    fflush(stdout);
-    FILE *f = fopen(connection->outFIFOPath, "a");
-    //TODO Fwrite puede no haber escrito todo, chequear
-    fwrite(&length, sizeof(length), 1, f);	//Write length
-    fwrite(data, length, 1, f);	//Write data
-    fclose(f);
-    printf("Done.\n");
-    fflush(stdout);
+int conn_send(const Connection conn, const void* data, size_t length) {
+//    printf("Sending %i bytes to %s...", length, conn->outFIFOPath);
+//    fflush(stdout);
+	ensureWrite(&length, sizeof(length), conn->outFD);
+	ensureWrite(data, length, conn->outFD);
+//    printf("Done.\n");
     return 1;
 }
 
 /*
  * Awaits to receive a message from the other endpoint.
  */
-int conn_receive(Connection conn, char** data, int* length) {
-    int result = 0;
-    FILE *f = fopen(conn->inFIFOPath, "r");
-    //TODO Fread puede no haber escrito todo, chequear
-    printf("Waiting for data at %s...", conn->inFIFOPath);
-    fflush(stdout);
-    fread(length, sizeof(*length), 1, f);
-    *data = malloc(*length);
-    fread(*data, *length, 1, f);
-    fclose(f);
-    printf("read %i bytes.\n", *length);
-    fflush(stdout);
-    return result;
+int conn_receive(const Connection conn, void** data, size_t* length) {
+//    printf("Waiting for data at %s...", conn->inFIFOPath);
+//    fflush(stdout);
+	ensureRead(length, sizeof(*length), conn->inFD);
+	*data = malloc(*length);
+	ensureRead(*data, *length, conn->inFD);
+//    printf("read %i bytes.\n", *length);
+    return 1;
 }

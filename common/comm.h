@@ -3,12 +3,17 @@
 
 #include <sys/types.h>
 
-/* struct connection_t {
-     char* outFIFOPath;
-     char* inFIFOPath;
- };  --> MUSN'T BE HERE! */
+struct connection_t {
+    char* outFIFOPath;
+    char* inFIFOPath;
+    int outFD;
+    int inFD;
+};	//TODO move, shouldn't be here
 
 typedef struct connection_t* Connection;
+
+#define MESSAGE_CLOSE "KTHXBAI"
+#define MESSAGE_OK "KCOOL"
 
 //FIFOs
 /*
@@ -52,7 +57,7 @@ int conn_close(Connection connection);
  * 2) Sends message data (of the specified length)
  * Returns 0 on success or some number on error.
  */
-int conn_send(const Connection connection,const void* data, const size_t length);
+int conn_send(const Connection connection, const void* data, size_t length);
 
 /*
  * Awaits to receive a message from the other endpoint.

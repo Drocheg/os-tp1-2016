@@ -37,5 +37,5 @@ Config loadConfig() {
 }
 
 char * getServerAddress() {
-    return loadConfig()->serverFIFOPath;
+    return "/tmp/mainServerFIFO";//loadConfig()->serverFIFOPath;
 }

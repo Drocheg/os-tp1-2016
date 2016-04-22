@@ -309,6 +309,15 @@ static int listen_wrp(int socket, int backlog) {
    	return 0;
 }
 
+static int shutdown_wrp(int socket, int how) {
+
+	if (shutdown(socket, how)) {
+		fprintf(stderr, "Couldn't close connection\n");
+   		return -1; 
+	}
+	return 0;
+}
+
 
 static Connection client_conn_open(Connection connection) {
 
@@ -475,9 +484,9 @@ Connection conn_open(const char* address) {
 
 
 int conn_close(Connection connection) {
+
 	conn_send(connection, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
-	if (shutdown(connection->socketfd, SHUT_RDWR)) {
-		fprintf(stderr, "Can't close connection\n");
+	if (shutdown_wrp(connection->socketfd, SHUT_RDWR)) {
    		return -1; 
 	}
 	free(connection);
@@ -486,7 +495,6 @@ int conn_close(Connection connection) {
 
 
 int conn_send(const Connection connection, const void* data, const size_t length) {
-
 	int i = 0;
 	write(connection->socketfd, &length, sizeof(size_t));
 	while (i++ < ATTEMPTS) {
@@ -498,8 +506,7 @@ int conn_send(const Connection connection, const void* data, const size_t length
 }
 
 
-int conn_receive(const Connection connection, void** data, size_t* length) {
-
+int conn_receive(const Connection connection, char** data, size_t* length) {
 	read(connection->socketfd, length, sizeof(size_t));
 	*data = malloc(*length);
 	return !(*length - read(connection->socketfd, *data, *length));
