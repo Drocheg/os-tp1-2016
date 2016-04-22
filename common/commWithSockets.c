@@ -317,6 +317,7 @@ static Connection main_server_conn(Connection connection) {
    		fprintf(stderr, "Can't listen through socket\n");
    		return NULL;
    	}
+   	printf("Now listening on port %hu", connection->port);
    	while(1) {
     	int new_fd = accept(connection->socketfd, NULL, NULL);
     	if (fork() > 0) {
