@@ -85,9 +85,9 @@ int main(int argc, char **argv) {
                 connection->outFD = outFD;
                 conn_send(connection, MESSAGE_OK, strlen(MESSAGE_OK)+1);	//Send ACK
                 while(!done) {
-                    int msgLen = 0;
+                    size_t msgLen = 0;
                     char *msg = NULL;
-                    conn_receive(connection, &msg, &msgLen);
+                    conn_receive(connection, (void **)&msg, &msgLen);
                     if(strcmp(msg, MESSAGE_CLOSE) == 0) {
                         printf("Received %s, shutting down forked server #%i\n", MESSAGE_CLOSE, getpid());
                         fflush(stdout);

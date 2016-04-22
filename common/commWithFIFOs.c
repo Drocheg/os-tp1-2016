@@ -32,7 +32,7 @@
  * it for reading, it would block or fail if opening non-block)
  * 7) Voilà! Client and server can communicate.
  */
-Connection conn_open(char* address) {
+Connection conn_open(const char* address) {
     Connection connection = malloc(sizeof(*connection));
     //TODO make this variable, could be 64-bit int, use sizeof(pid_t)
     char pid[11];   //Max 32-bit int size = 10 + 1 for null terminator
@@ -56,7 +56,7 @@ Connection conn_open(char* address) {
     printf("Successfully created FIFOs for process with PID %s\n", pid);
     //Write FIFO paths on main server FIFO
     int fd = open(address, O_WRONLY);
-    int len = strlen(connection->outFIFOPath)+1;
+    size_t len = strlen(connection->outFIFOPath)+1;
     ensureWrite(&len, sizeof(len), fd);
     ensureWrite(connection->outFIFOPath, len, fd);
     len = strlen(connection->inFIFOPath)+1;
@@ -67,7 +67,7 @@ Connection conn_open(char* address) {
     fflush(stdout);
     char *ack;
     len = strlen(MESSAGE_OK)+1;
-    conn_receive(connection, &ack, &len);
+    conn_receive(connection, (void **)&ack, &len);
     if(strcmp(ack, MESSAGE_OK) == 0) {	//Server forked and listening, open write FIFO again
     	printf("received.\n");
     	connection->outFD = open(connection->outFIFOPath, O_WRONLY);
@@ -100,7 +100,7 @@ int conn_close(Connection conn) {
  * 2) Sends message data (of the specified length)
  * Returns 0 on error or some other number on success.
  */
-int conn_send(Connection conn, const char* data, int length) {
+int conn_send(const Connection conn, const void* data, size_t length) {
 //    printf("Sending %i bytes to %s...", length, conn->outFIFOPath);
 //    fflush(stdout);
 	ensureWrite(&length, sizeof(length), conn->outFD);
@@ -112,7 +112,7 @@ int conn_send(Connection conn, const char* data, int length) {
 /*
  * Awaits to receive a message from the other endpoint.
  */
-int conn_receive(Connection conn, char** data, int* length) {
+int conn_receive(const Connection conn, void** data, size_t* length) {
 //    printf("Waiting for data at %s...", conn->inFIFOPath);
 //    fflush(stdout);
 	ensureRead(length, sizeof(*length), conn->inFD);
