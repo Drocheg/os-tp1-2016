@@ -46,7 +46,7 @@ struct connection_t {
  * number from 0 to 65535
  * Returns the IP address or NULL if there isn't a match with specific format
  */
-static char * getIP(const char * address) {
+static char* getIP(const char * address) {
 
 	char * aux = NULL;
 	int i = 0, flag = 0;
@@ -257,25 +257,92 @@ static int checkAddressType(const char* address) {
 // }
 
 
+
+/* Connectinf functions wrappers */
+static int inet_pton_wrp(int af, const char* restrict src, void* restrict dst) {
+
+	int result = inet_pton(af, src, dst)
+	if (result == 0) {
+		fprintf(stderr, "Invalid IP address\n");
+		return -1;
+	}
+	if (result == -1) {
+		fprintf(stderr, "Couldn't parse IP. System error\n");
+		return -1;
+	}
+	return 0;
+}
+
+static int socket_wrp(int domain, int type, int protocol) {
+
+	int result = socket(domain, type, protocol);
+	if (result < 0) {
+		fprintf(stderr, "Couldn't create socket\n");
+	}
+	return result;
+}
+
+static int connect_wrp(int socket, const struct sockaddr* address, socklen_t address_len) {
+
+	if (connect(socket, address, address_len)) {
+		fprintf(stderr, "Couldn't create connection\n");
+		return -1;
+	}
+	return 0;
+}
+
+static int bind_wrp(int socket, const struct sockaddr* address, socklen_t address_len) {
+
+	if (bind(socket, address, address_len) {
+    	fprintf(stderr, "Couldn't bind socket\n");
+    	return -1;
+    }
+    return 0;
+}
+
+static int listen_wrp(int socket, int backlog) {
+
+	if (listen(socket, backlog)) {
+   		fprintf(stderr, "Can't listen through socket\n");
+   		return -1;
+   	}
+   	return 0;
+}
+
+
 static Connection client_conn_open(Connection connection) {
 
 	struct sockaddr_in serverAddress;
 
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_port = htons(connection->port);
-	inet_pton(AF_INET, connection->ip, &serverAddress.sin_addr);
 
+	if (inet_pton_wrp(AF_INET, connection->ip, &serverAddress.sin_addr)) {
+		return NULL;
+	}
+	if ((connection->socketfd = socket_wrp(PF_INET, SOCK_STREAM, 0)) < 0) {
+    	return NULL;
+	}
+	if (connect_wrp(connection->socketfd, (struct sockaddr*)&serverAddress, sizeof(serverAddress))) {
+    	return NULL;
+	}	
+	return connection;
+
+	/*
+	if (inet_pton(AF_INET, connection->ip, &serverAddress.sin_addr) != 1) {
+		fprintf(stderr, "Invalid IP address\n");
+    	return NULL;
+
+	}
 	if ((connection->socketfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
 		fprintf(stderr, "Couldn't create socket\n");
     	return NULL;
 	}
-	
 	if (connect(connection->socketfd, (struct sockaddr*)&serverAddress, sizeof(serverAddress))) {
 		fprintf(stderr, "Couldn't create connection\n");
     	return NULL;
-	}
-
-	return connection;
+	} */
+	
 
 }
 
@@ -292,7 +359,22 @@ static Connection forked_server_conn_open(in_port_t port, int fd) {
 }
 
 
-static Connection main_server_conn(Connection connection) {
+static void listen_loop(Connection connection) {
+
+	printf("Now listening on port %hu", connection->port);
+	while(1) {
+    	int new_fd = accept(connection->socketfd, NULL, NULL);
+    	if (fork() > 0) {
+    		/* New process created, and forkedServer function is called */
+    		Connection forked = forked_server_conn_open(connection->port, new_fd)
+			int result forkedServer(forked);
+			conn_close(forked);
+			exit(result); /* Finishes execution of forked server process */
+		}
+    }
+}
+
+static sockaddr_in main_server_setup(Connection connection) {
 
 	struct sockaddr_in mainServer;
 
@@ -300,6 +382,36 @@ static Connection main_server_conn(Connection connection) {
     mainServer.sin_addr.s_addr = htonl(INADDR_ANY); /* Enables connection through all present interfaces */
     mainServer.sin_port = htons(connection->port);
 
+    return mainServer;
+
+}
+
+static Connection main_server_conn(Connection connection) {
+
+	struct sockaddr_in mainServer = main_server_setup(connection);
+
+    if ((connection->socketfd = socket_wrp(PF_INET, SOCK_STREAM, 0)) < 0) {
+    	return NULL;
+	}
+	if (bind_wrp(connection->socketfd, (struct sockaddr*)&mainServer, sizeof(mainServer))) {
+    	return NULL;
+    }
+    if (listen_wrp(connection->socketfd, 10)) {
+   		return NULL;
+   	}
+   	listen_loop(connection);
+
+   	return connection;
+
+
+
+   	/*
+   	struct sockaddr_in mainServer;
+
+   	
+	mainServer.sin_family = AF_INET;
+    mainServer.sin_addr.s_addr = htonl(INADDR_ANY); // Enables connection through all present interfaces
+    mainServer.sin_port = htons(connection->port);
 
 	if ((connection->socketfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
 		fprintf(stderr, "Couldn't create socket\n");
@@ -316,21 +428,18 @@ static Connection main_server_conn(Connection connection) {
     if (listen(connection->socketfd, 10)) {
    		fprintf(stderr, "Can't listen through socket\n");
    		return NULL;
-   	}
+   	} 
+
    	printf("Now listening on port %hu", connection->port);
    	while(1) {
     	int new_fd = accept(connection->socketfd, NULL, NULL);
     	if (fork() > 0) {
-    		/* New process created, and forkedServer function called */
+    		// New process created, and forkedServer function called
 			exit(forkedServer(forked_server_conn_open(connection->port, new_fd)));
 		}
  
-    }
-
-	return connection;
+    }*/
 }
-
-
 
 
 
@@ -357,11 +466,9 @@ Connection conn_open(const char* address) {
 		}	
 		case CLIENT_CONNECTION: {
 			return client_conn_open(connection);
-		} default: {
-			return NULL;
 		}
-
 	}
+	return NULL;
 
 
 }
@@ -369,8 +476,12 @@ Connection conn_open(const char* address) {
 
 int conn_close(Connection connection) {
 	conn_send(connection, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
+	if (shutdown(connection->socketfd, SHUT_RDWR)) {
+		fprintf(stderr, "Can't close connection\n");
+   		return -1; 
+	}
 	free(connection);
-	return 1;
+	return 0;
 }
 
 

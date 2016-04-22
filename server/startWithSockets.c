@@ -1,3 +1,4 @@
+/* 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -5,8 +6,19 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "../common/data.h"
+#include "../common/data.h" 
+*/
+#include "../common/commWithSockets.h"
 
+
+
+int start(char * address) {
+
+	conn_open(address);
+}
+
+
+/*
 typedef struct srv_connection_t * ServerConnection;
 
 
@@ -44,7 +56,7 @@ static void forkedServer(int socket_fd) {
 }
 
 
-
+*/
 
 
 // static ServerConnection new_connection(char * port) {
@@ -86,7 +98,3 @@ static void forkedServer(int socket_fd) {
 // }
 
 
-int start(char * address) {
-
-	conn_open(address);
-}

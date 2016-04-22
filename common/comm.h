@@ -41,6 +41,8 @@ Connection conn_open(const char* address);
 
 /*
  * Closes a connection (i.e. finishes connection)
+ * Returns 0 upon success. Otherwise, -1 is returned and errno
+ * is set to indicate the error.
  */
 int conn_close(Connection connection);
 
