@@ -20,15 +20,10 @@ struct srv_connection_t {
 
 
 
-Data readFromConnection(int fd) {
-
-    Data data = newData(NULL, 0, 0); /* Will be replaced by read data */
-	size_t size = 0;
+int readFromConnection(int fd, void** data, size_t* length) {
     
-	read(fd, &(size), sizeof(size_t));
-	read(fd, data, size);
-
-	return data;
+	read(fd, length, sizeof(size_t));
+	return return !(*length - read(fd, *data, *length));
 }
 
 static void writeToConnection(int fd, Data data) {

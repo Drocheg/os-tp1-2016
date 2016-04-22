@@ -1,10 +1,12 @@
 #ifndef comm_h
 #define comm_h
 
-struct connection_t {
-    char* outFIFOPath;
-    char* inFIFOPath;
-};
+#include <sys/types.h>
+
+/* struct connection_t {
+     char* outFIFOPath;
+     char* inFIFOPath;
+ };  --> MUSN'T BE HERE! */
 
 typedef struct connection_t* Connection;
 
@@ -31,7 +33,7 @@ typedef struct connection_t* Connection;
 /*
  * Creates a connection between a client and a server.
  */
-Connection conn_open(char* address);
+Connection conn_open(const char* address);
 
 //int conn_accept(Connection connection);
 //
@@ -48,12 +50,12 @@ int conn_close(Connection connection);
  * 2) Sends message data (of the specified length)
  * Returns 0 on success or some number on error.
  */
-int conn_send(Connection connection, char* data, int length);
+int conn_send(const Connection connection,const void* data, const size_t length);
 
 /*
  * Awaits to receive a message from the other endpoint.
  */
-int conn_receive(Connection conn, char** data, int* length);
+int conn_receive(const Connection conn, void** data, size_t* length);
 // int length;
 // char* data;
 // receive(conn, &data, &length);
