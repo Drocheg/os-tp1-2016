@@ -33,7 +33,7 @@ static char * getIP(const char * address) {
 	char * aux;
 	int i = 0;
 	
-	while (address[i++] != ':')
+	while(address[i++] != ':')
 		;
 	aux = malloc(i);
 	memcpy(aux, (void*)address, i - 1);
@@ -78,14 +78,13 @@ Connection conn_open(const char* address) {
 }
 
 int conn_close(Connection connection) {
-	conn_send(connection, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
+	conn_send(connection, MESSAGE_CLOSE, sizeof(MESSAGE_CLOSE));
 	free(connection);
 	return 1;
 }
 
 
 int conn_send(const Connection connection, const void* data, const size_t length) {
-
 	int i = 0;
 	write(connection->socketfd, &length, sizeof(size_t));
 	while (i++ < ATTEMPTS) {
@@ -98,7 +97,6 @@ int conn_send(const Connection connection, const void* data, const size_t length
 
 
 int conn_receive(const Connection connection, char** data, size_t* length) {
-
 	read(connection->socketfd, length, sizeof(size_t));
 	*data = malloc(*length);
 	return !(*length - read(connection->socketfd, *data, *length));
