@@ -9,6 +9,7 @@ nbproject/*
 Makefile-netbeans
 .project
 CMakeLists.txt
+*.bin
 
 # Object files
 *.o
