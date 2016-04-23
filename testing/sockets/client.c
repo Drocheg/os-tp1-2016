@@ -12,7 +12,9 @@ static pid_t serverPID;
 
 static void finish(int signal) {
 
-	kill(serverPID, SIGINT);
+	kill(serverPID, SIGKILL);
+	printf("Bye bye\n");
+	exit(0);
 }
 
 
@@ -29,6 +31,7 @@ int main(int argc, char *argv[]) {
 	conn_receive(connection, (void**)&pid, &length);
 	serverPID = pid[0];
 	free(pid);
+	/*signal(SIGINT, finish);*/
 	printf("%s\n", rta);
 	printf("Server PID: %d\n", serverPID);
 	while(1) {
