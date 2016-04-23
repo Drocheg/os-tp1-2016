@@ -14,7 +14,7 @@ default: all
 	$(CC) $(CFLAGS) -c $< -o $@
 
 server: $(OBJECTS_COMMON) $(OBJECTS_SERVER)
-	$(CC) $(CFLAGS) -pthread $(OBJECTS_COMMON) $(OBJECTS_SERVER) -o server.bin -ldl
+	$(CC) $(CFLAGS) -pthread -lpthread $(OBJECTS_COMMON) $(OBJECTS_SERVER) -o server.bin -ldl
 
 all: server
 

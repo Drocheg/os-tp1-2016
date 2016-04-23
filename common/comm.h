@@ -3,71 +3,51 @@
 
 #include <sys/types.h>
 
-struct connection_t {
-    char* outFIFOPath;
-    char* inFIFOPath;
-    int outFD;
-    int inFD;
-};	//TODO move, shouldn't be here
-
 typedef struct connection_t* Connection;
 
 #define MESSAGE_CLOSE "KTHXBAI"
 #define MESSAGE_OK "KCOOL"
 
-//FIFOs
 /*
- * The general idea for OPENING a connection is as follows:
- * 1) Client creates FIFO connection with the server (path defined in config file).
- * 2) Client creates 2 FIFOs and sends the two file paths to the server (one for sending
- *      and other for receiving data).
- * 3) Server opens the 2 FIFOs (one for read and other for write) and forks (listening to them).
- * 4) Client also opens the 2 FIFOs.
- * 5) Client and Server can now communicate.
- */
-
-//SOCKETS
-/*
- * The general idea for OPENING a connection is as follows:
- * 1) Client creates socket connection with the server via localhost (server port defined in config file).
- * 2) The server accepts the connection using accept and forks itself to service that one client.
- * 3) Client and server can now communicate.
- */
-
-
-/*
- * Creates a connection between a client and a server.
+ * Creates a connection between the current process and a server.
+ *
+ * @param const char *address The address of the main server.
+ * @return Connection The connection, ready to receive data with
+ * <i>conn_send</i>, or NULL on error.
  */
 Connection conn_open(const char* address);
 
-//int conn_accept(Connection connection);
-//
-//Connection conn_setup(int ip, int port);
-
 /*
- * Closes a connection (i.e. finishes connection)
- * Returns 0 upon success. Otherwise, -1 is returned and errno
- * is set to indicate the error.
+ * Sends MESSAGE_CLOSE to the other endpoint of this connection
+ * and closes this process' end of the connection.
+ *
+ * @return int 1 on success, 0 on error.
  */
 int conn_close(Connection connection);
 
 /*
- * Sends the specified message to the other endpoint of the specified connection. Asynchronous. To expect a response, call receive() afterwards.
- * 1) Sends message length (4 bytes little-endian integer)
- * 2) Sends message data (of the specified length)
- * Returns 0 on success or some number on error.
+ * Sends the specified message to the other endpoint of the specified connection.
+ * To expect a response, call <i>conn_receive()</i> afterwards.
+ *
+ * @param const Connection c The connection through which to send data.
+ * @param const void* data The data to send.
+ * @param const size_t length The length (in bytes) of the data to send. This is
+ * sent before sending the data, so the receiving end knows how much to read.
+ * @return int 1 on success, 0 on error.
  */
-int conn_send(const Connection connection, const void* data, size_t length);
+int conn_send(const Connection connection, const void* data, const size_t length);
 
 /*
- * Awaits to receive a message from the other endpoint.
+ * Waits to read data from the specified connection.
+ *
+ * @param const Connection c The connection from which to read data.
+ * @param void** data Where to store the received data.
+ * @param size_t* length Where to store the length of the received data.
+ * This is read first before reading the data itself, in order to allocate
+ * just enough memory.
+ * @return int 1 on success, 0 on error.
  */
 int conn_receive(const Connection conn, void** data, size_t* length);
-// int length;
-// char* data;
-// receive(conn, &data, &length);
-// dentro de la función: *data = malloc(length);
-// luego, para leer
-//data[0]
+
 
 #endif /* comm_h */

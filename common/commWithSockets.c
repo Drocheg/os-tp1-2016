@@ -1,5 +1,6 @@
-#include "comm.h"
+#include "commWithSockets.h"
 #include "config.h"
+#include <lib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -8,7 +9,6 @@
 #include <unistd.h>
 #include <regex.h> 
 #include <stdio.h>
-#include "../server/forkedServer.h"
 
 #ifndef ATTEMPTS
 #define ATTEMPTS 10
@@ -30,15 +30,6 @@
 #ifndef CLIENT_CONNECTION
 #define CLIENT_CONNECTION 3
 #endif
-
-
-
-struct connection_t {
-	char* ip;
-	in_port_t port;
-	int socketfd;
-
-};
 
 /*
  * Gets the IP part from the address string, assuming the ddd.ddd.ddd.ddd:ppppp 
@@ -376,7 +367,7 @@ static void listen_loop(Connection connection) {
     	if (fork() == 0) {
     		/* New process created, and forkedServer function is called */
     		Connection forked = forked_server_conn_open(connection->port, new_fd)
-			int result forkedServer(forked);
+			int result forkedServer(forked);	//FIXME move elsewhere include was removed and won compile, forking shouldn't be done here
 			conn_close(forked);
 			exit(result); /* Finishes execution of forked server process */
 		}
@@ -507,7 +498,8 @@ int conn_send(const Connection connection, const void* data, const size_t length
 
 
 int conn_receive(const Connection connection, char** data, size_t* length) {
-	read(connection->socketfd, length, sizeof(size_t));
+	ensureRead(length, sizeof(*length), connection->socketfd);
 	*data = malloc(*length);
-	return !(*length - read(connection->socketfd, *data, *length));
+	ensureRead(*data, *length, connection->socketfd);
+	return 1;
 }
