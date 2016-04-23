@@ -232,7 +232,7 @@ static int checkAddressType(const char* address) {
 
 
 /* Connecting functions wrappers */
-static int inet_pton_wrp(int af, const char* restrict src, void* restrict dst) {
+static int inet_pton_wrp(int af, const char* src, void* dst) {
 
 	printf("%s\n", src);
 	int result = inet_pton(af, src, dst);

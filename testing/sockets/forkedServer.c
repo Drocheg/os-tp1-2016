@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 
 int forkedServer(Connection connection) {
@@ -14,6 +15,8 @@ int forkedServer(Connection connection) {
 	char * started = "Connection started";
 	pid_t pid = getpid();
 	printf("%s\n", started);
+	printf("PID: %d\n", pid);
+	
 	conn_send(connection, started, strlen(started) + 1);
 	conn_send(connection, (void*)&pid, sizeof(pid_t));
 	while(1) {

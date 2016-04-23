@@ -4,8 +4,11 @@
 #include "aux.h"
 #include <string.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-static int serverPID;
+
+static pid_t serverPID;
 
 static void finish(int signal) {
 
@@ -18,17 +21,23 @@ static void finish(int signal) {
 int main(int argc, char *argv[]) {
 
 	Connection connection = conn_open(argv[1]);
+	pid_t * pid;
 	char * rta;
 	size_t length;
 
 	conn_receive(connection, (void**)&rta, &length);
-	conn_receive(connection, (void**)&serverPID, &length);
+	conn_receive(connection, (void**)&pid, &length);
+	serverPID = pid[0];
+	free(pid);
 	printf("%s\n", rta);
+	printf("Server PID: %d\n", serverPID);
 	while(1) {
 
 		char * aux = getLine();
 		conn_send(connection, aux, strlen(aux) + 1);
+		free(aux);
 		conn_receive(connection, (void**)&rta, &length);
 		printf("%s\n", rta);
+		free(rta);
 	}
 }
