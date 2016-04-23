@@ -1,29 +1,22 @@
-#ifndef forkedServer_h
-#define forkedServer_h
+/*
+ * forkedServer.h
+ *
+ *  Created on: Apr 23, 2016
+ *      Author: jlp
+ */
 
-#include "../common/comm.h"
+#ifndef FORKEDSERVER_H_
+#define FORKEDSERVER_H_
 
+#include <comm.h>
 
-int forkedServer(Connection connection);
+/**
+ * Main loop for a forked server. The server will communicate with the
+ * client in the specified connection.
+ *
+ * @param Connection c An established, working connection from which
+ * to listen to requests.
+ */
+void forkedServer(Connection c);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif /* forkedServer_h */
+#endif /* FORKEDSERVER_H_ */

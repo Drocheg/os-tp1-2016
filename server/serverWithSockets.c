@@ -1,5 +1,5 @@
-#include "comm.h"
-#include "config.h"
+#include <comm.h>
+#include <config.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
@@ -7,8 +7,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
-
-
 
 
 static void readFromConnection(int fd, void** data) {
