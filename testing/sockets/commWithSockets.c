@@ -331,12 +331,16 @@ static void listen_loop(Connection connection) {
 	printf("Now listening on port %hu\n", connection->port);
 	while(1) {
     	int new_fd = accept(connection->socketfd, NULL, NULL);
-    	if (fork() == 0) {
-    		/* New process created, and forkedServer function is called */
-    		Connection forked = forked_server_conn_open(connection->port, new_fd);
-			int result = forkedServer(forked);	/*FIXME*/
-			conn_close(forked);
-			exit(result); /* Finishes execution of forked server process */
+    	if (new_fd < 0) {
+    		fprintf(stderr, "Couldn't accept connection\n");
+    	} else {
+	    	if (fork() == 0) {
+	    		/* New process created, and forkedServer function is called */
+	    		Connection forked = forked_server_conn_open(connection->port, new_fd);
+				int result = forkedServer(forked);	/*FIXME*/
+				conn_close(forked);
+				exit(result); /* Finishes execution of forked server process */
+			}
 		}
     }
 }
