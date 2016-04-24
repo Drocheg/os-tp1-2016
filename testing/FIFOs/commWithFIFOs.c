@@ -85,12 +85,14 @@ static int createMainServerFIFO(Connection connection) {
 static int createFIFOs(Connection connection) {
 
     pid_t pid = getpid();
-    void* pidStr = calloc(1, countDigits(pid) + 1);
+    char* pidStr = calloc(1, countDigits(pid) + 1);
     int pathLength = 5 + strlen(pidStr); /* "/tmp/" + pidStr */
     
     sprintf(pidStr, "%i", pid);
     connection->outFIFOPath = malloc(pathLength+4+1); /* path + "-out" +\0 */
     connection->inFIFOPath = malloc(pathLength+3+1); /*path + "-in" + \0 */
+    sprintf(connection->outFIFOPath, "/tmp/%s-out", pidStr);
+    sprintf(connection->inFIFOPath, "/tmp/%s-in", pidStr);
 
     /* 0666 == anybody can read and write */
     if (mkfifo(connection->outFIFOPath, 0666) || mkfifo(connection->inFIFOPath, 0666)) {
@@ -150,7 +152,7 @@ static int openInFD(int fd, char* path) {
         fprintf(stderr, "Couldn't open connection.\n");
         return -1;
     }
-    return 0;
+    return fd;
 
 }
 
@@ -163,7 +165,7 @@ static int openOutFD(int fd, char* path) {
         fprintf(stderr, "Couldn't open connection.\n");
         return -1;
     }
-    return 0;
+    return fd;
 
 }
 
@@ -171,10 +173,10 @@ static int openConnFD(Connection connection) {
 
     int flagThing;
 
-    if (openInFD(connection->inFD, connection->inFIFOPath)) {
+    if ( (connection->inFD = openInFD(connection->inFD, connection->inFIFOPath)) < 0 ) {
         return -1;
     }
-    if(openOutFD(connection->outFD, connection->outFIFOPath)) {
+    if( (connection->outFD = openOutFD(connection->outFD, connection->outFIFOPath)) < 0) {
         return -1;
     }
     return 0;
@@ -192,25 +194,24 @@ static int checkFIFOWrites(int result) {
 static int sendFIFOPaths(Connection connection) {
 
     int fd = open(connection->mainServerPath, O_WRONLY);
-    size_t len;
+    size_t len = 0;
     
     if (fd < 0) {
         fprintf(stderr, "Couldn't send FIFOs Paths.\n");
         return -1;
     }
-
     len = strlen(connection->outFIFOPath) + 1;
-    if (checkFIFOWrites(ensureWrite(&len, sizeof(len), fd))) {
+    if (checkFIFOWrites(ensureWrite((void*)&len, sizeof(len), fd))) {
         return -1;
     }
-    if (checkFIFOWrites(ensureWrite(connection->outFIFOPath, len, fd))) {
+    if (checkFIFOWrites(ensureWrite((void*)connection->outFIFOPath, len, fd))) {
         return -1;
     }
     len = strlen(connection->inFIFOPath) + 1;
-    if (checkFIFOWrites(ensureWrite(&len, sizeof(len), fd))) {
+    if (checkFIFOWrites(ensureWrite((void*)&len, sizeof(len), fd))) {
         return -1;
     }
-    if (checkFIFOWrites(ensureWrite(connection->inFIFOPath, len, fd))) {
+    if (checkFIFOWrites(ensureWrite((void*)connection->inFIFOPath, len, fd))) {
         return -1;
     }
     if (close(fd) < 0) {
@@ -242,17 +243,19 @@ static int checkFIFOReads(int result) {
 
 static int attendConnection(Connection mainConn, Connection forkConn) {
 
-    size_t length;
+    size_t length = 0;
 
-    if (checkFIFOReads(ensureRead(&length, sizeof(length), mainConn->inFD))) {
+    if (checkFIFOReads(ensureRead(&length, sizeof(size_t), mainConn->inFD))) {
         return -1;
     }
     forkConn->inFIFOPath = malloc(length);    
     if (checkFIFOReads(ensureRead(forkConn->inFIFOPath, length, mainConn->inFD))) {
         return -1;
     }
+    printf("%s\n", forkConn->inFIFOPath);
+    printf("Tambien llegue aca\n");
 
-    if (checkFIFOReads(ensureRead(&length, sizeof(length), mainConn->inFD))) {
+    if (checkFIFOReads(ensureRead(&length, sizeof(size_t), mainConn->inFD))) {
         return -1;
     }
     forkConn->outFIFOPath = malloc(length);
@@ -268,7 +271,8 @@ static Connection createForkedConnection(Connection mainConn) {
     Connection forkConn;
     char* address = malloc(strlen(mainConn->mainServerPath) + 2);
     address[0] = 'f';
-    address = strcpy((char*)((void*)address + 1), mainConn->mainServerPath);
+    strcpy((char*)((void*)address + 1), mainConn->mainServerPath);
+    printf("Addres es: %s\n", address);
     forkConn = conn_open(address);
     if (attendConnection(mainConn, forkConn)) {
         return NULL;
@@ -328,7 +332,11 @@ static Connection client_conn_open(Connection connection) {
     if (createFIFOs(connection)) {
         return NULL;
     }
-    if (openConnFD(connection)) {
+
+    /*if (openConnFD(connection)) {
+        return NULL;
+    } Can't open out path, why not?*/
+    if ( (connection->inFD = openInFD(connection->inFD, connection->inFIFOPath)) < 0) {
         return NULL;
     }
     if (sendFIFOPaths(connection)) {
@@ -340,6 +348,9 @@ static Connection client_conn_open(Connection connection) {
     
     if(strcmp(ack, MESSAGE_OK)) {  //Server forked and listening, open write FIFO again
         fprintf(stderr, "Communication is corrupted\n");
+        return NULL;
+    }
+    if ( (connection->outFD = openOutFD(connection->outFD, connection->outFIFOPath)) < 0) {
         return NULL;
     }
     return connection;
