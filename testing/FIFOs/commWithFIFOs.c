@@ -252,8 +252,6 @@ static int attendConnection(Connection mainConn, Connection forkConn) {
     if (checkFIFOReads(ensureRead(forkConn->inFIFOPath, length, mainConn->inFD))) {
         return -1;
     }
-    printf("%s\n", forkConn->inFIFOPath);
-    printf("Tambien llegue aca\n");
 
     if (checkFIFOReads(ensureRead(&length, sizeof(size_t), mainConn->inFD))) {
         return -1;
@@ -310,9 +308,9 @@ static void listen_loop(Connection connection) {
                 printf("client connected.\n");            
                 if (fork() == 0) {   /*Child*/
                     isParentServer = 0;
-                    conn_close(connection);
+                    conn_close(connection); /*TODO averiguar si esta bien */
                     forkedServer(forkConn);
-                } else {  //Parent
+                } else {  /*Parent*/
                     free(forkConn);
                     printf("Listening for clients...");
                     fflush(stdout);
