@@ -1,4 +1,4 @@
-#include "commWithFIFOs.h"
+#include <comm.h>
 #include <lib.h>
 #include <config.h>
 #include <stdlib.h>
@@ -9,7 +9,42 @@
 #include <string.h>
 #include <stdint.h>
 #include <fcntl.h>
+#include <sys/select.h>
 
+struct connection_t {
+    char* outFIFOPath;
+    char* inFIFOPath;
+    int outFD;
+    int inFD;
+};
+
+struct conn_params_t {
+    int connRequestsFD;   // File descriptor of open file where to listen for connection requests
+};
+
+/**
+ * Creates two FIFOs for a process to communicate with a different process, and
+ * stores their paths in the specified connection. Does not open the FIFOs.
+ * The created FIFOs have the names:
+ * (basePath)-in For incoming data
+ * (basePath)-out For outgoing data
+ * 
+ * @param const char* basePath The base pathname of the FIFOs to create.
+ * @param Connection c The connection where to store the paths of the created
+ * FIFOs.
+ * @return int 1 on success, 0 on failure.
+ */
+static int createProcessFIFOs(const char* basePath, Connection c);
+
+/**
+ * Sends the paths of two FIFOs previously created with <i>createProcessFIFOs()</i>
+ * to the main server using the specified FIFO path.
+ * 
+ * @param Connection c The connection whose FIFO paths to send.
+ * @param const char* mainServerFIFO The path of the main server FIFO.
+ * @return int 1 on success, 0 on failure.
+ */
+static int sendFIFOPaths(Connection c, const char* mainServerFIFO);
 
 /*
  * Creates a connection between the current process and a server.
@@ -36,37 +71,29 @@
  */
 Connection conn_open(const char* address) {
     Connection connection = malloc(sizeof(*connection));
-
+    
     //Step 1
-    char pid[11];   //Max 32-bit int size = 10 + 1 for null terminator	TODO make this variable, could be 64-bit int, use sizeof(pid_t)
-    sprintf(pid, "%i", getpid());
-    int pathLength = 5+strlen(pid); //"/tmp/"+pid
-    connection->outFIFOPath = malloc(pathLength+4+1);   //path+"-out"+\0
-    connection->inFIFOPath = malloc(pathLength+3+1);    //path+"-in"+\0
-    sprintf(connection->outFIFOPath, "/tmp/%s-out", pid);
-    sprintf(connection->inFIFOPath, "/tmp/%s-in", pid);
-    if (mkfifo(connection->outFIFOPath, 0666) || mkfifo(connection->inFIFOPath, 0666)) {	//0666 == anybody can read and write TODO change?
-        fprintf(stderr, "Error creating connection FIFOs.\n");
+    pid_t pid = getpid();
+    char buff[5+countDigits(pid)+1];    // "/tmp/" + pid + \0
+    sprintf(buff, "/tmp/%i", pid);
+    if(!createProcessFIFOs(buff, connection)) {
+        printf("Couldn't create connection FIFOs for process #%i\n", getpid());
         return NULL;
     }
-
+    
     //Step 2
     connection->inFD = open(connection->inFIFOPath, O_RDONLY|O_NONBLOCK);
-    int flagThing = fcntl(connection->inFD, F_SETFL, fcntl(connection->inFD, F_GETFL)&~O_NONBLOCK);	//Remove nonblocking flag
-
+    fcntl(connection->inFD, F_SETFL, fcntl(connection->inFD, F_GETFL)&~O_NONBLOCK);	//Remove nonblocking flag
+    
     //Step 3
-    int fd = open(address, O_WRONLY);
-    size_t len = strlen(connection->outFIFOPath)+1;
-    ensureWrite(&len, sizeof(len), fd);
-    ensureWrite(connection->outFIFOPath, len, fd);
-    len = strlen(connection->inFIFOPath)+1;
-    ensureWrite(&len, sizeof(len), fd);
-    ensureWrite(connection->inFIFOPath, len, fd);
-    close(fd);
-
+    if(!sendFIFOPaths(connection, getServerAddress())) {
+        printf("Couldn't send FIFO information to main server for process #%i\n", getpid());
+        return NULL;
+    }
+    
     //Wait for OK (steps 4-5)
     char *ack;
-    len = strlen(MESSAGE_OK)+1;
+    size_t len = strlen(MESSAGE_OK)+1;
     conn_receive(connection, (void **)&ack, &len);
     //Step 6
     if(strcmp(ack, MESSAGE_OK) == 0) {	//Server forked and listening, open write FIFO again
@@ -81,9 +108,9 @@ Connection conn_open(const char* address) {
 }
 
 int conn_close(Connection conn) {
-	conn_send(conn, MESSAGE_CLOSE, strlen(MESSAGE_CLOSE)+1);
-	close(conn->outFD);
-	close(conn->inFD);
+    conn_send(conn, MESSAGE_CLOSE, strlen(MESSAGE_CLOSE)+1);
+    close(conn->outFD);
+    close(conn->inFD);
     remove(conn->outFIFOPath);		//Removes the file
     remove(conn->inFIFOPath);
     printf("Connection closed.\n");
@@ -94,22 +121,118 @@ int conn_close(Connection conn) {
 }
 
 int conn_send(const Connection conn, const void* data, const size_t length) {
-	if(length == 0) {
-		return 1;
-	}
-	return ensureWrite(&length, sizeof(length), conn->outFD) && ensureWrite(data, length, conn->outFD);
+    if(length == 0) {
+        return 1;
+    }
+    return ensureWrite(&length, sizeof(length), conn->outFD)
+            && ensureWrite(data, length, conn->outFD);
 }
 
 int conn_receive(const Connection conn, void** data, size_t* length) {
-	if(!ensureRead(length, sizeof(*length), conn->inFD)) {
-		return 0;
-	}
-	*data = malloc(*length);
-	if(!ensureRead(*data, *length, conn->inFD)) {
-		if(*data != NULL) {
-			free(*data);
-		}
-		return 0;
-	}
+    if(!ensureRead(length, sizeof(*length), conn->inFD)) {
+        return 0;
+    }
+    *data = malloc(*length);
+    if(!ensureRead(*data, *length, conn->inFD)) {
+        if(*data != NULL) {
+            free(*data);
+        }
+        return 0;
+    }
+    return 1;
+}
+
+
+ConnectionParams conn_listen(char *listeningAddress) {
+    //Create FIFO where process will listen for connection requests
+    if(mkfifo(listeningAddress, 0666) == -1) {    //0666 == anybody can read and write TODO change?
+        fprintf(stderr, "Error creating connection FIFOs for process #%i.\n", getpid());
+        return NULL;
+    }
+    ConnectionParams p = malloc(sizeof(*p));
+    int fd = open(listeningAddress, O_RDONLY|O_NONBLOCK);           // Open in non-blocking read mode to prevent blocking, but remove flag immediately after
+    if(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL)&~O_NONBLOCK) == -1) {  // Remove nonblocking flag, we want reads to be blocking later
+        printf("Couldn't open requests file in non-blocking mode for process #%i\n", getpid());
+        return NULL;
+    }
+    p->connRequestsFD = fd;
+    return p;
+}
+
+Connection conn_accept(ConnectionParams params) {
+    fd_set rfds;            //File Descriptor set for select() - has to be reconstructed every time
+    // struct timeval tv;   //Timeout struct for select()
+    // tv.tv_sec = 5;
+    // tv.tv_usec = 0;
+    FD_ZERO(&rfds);
+    FD_SET(params->connRequestsFD, &rfds);
+    
+    int selectResult = select(params->connRequestsFD+1, &rfds, NULL, NULL, /*&tv*/NULL);  //Last param = timeout, NULL = no timeout
+    if (selectResult == -1) {  //Error
+        printf("Error with select(). Aborting.\n");
+        return NULL;
+    }
+    else {
+        printf("Client connected.\n");
+        Connection c = malloc(sizeof(*c));
+        /*
+         * Read:
+         * 1) Out pipe path length
+         * 2) Out pipe as in pipe
+         * 3) In pipe path length
+         * 4) In pipe as out pipe
+         */
+        size_t len = -1;
+        if(!ensureRead(&len, sizeof(len), params->connRequestsFD))
+            return NULL;
+        c->inFIFOPath = malloc(len);
+        if(!ensureRead(c->inFIFOPath, len, params->connRequestsFD))
+            return NULL;
+        if(!ensureRead(&len, sizeof(len), params->connRequestsFD))
+            return NULL;
+        c->outFIFOPath = malloc(len);
+        if(!ensureRead(c->outFIFOPath, len, params->connRequestsFD))
+            return NULL;
+        //Complete connection
+        int inFD = open(c->inFIFOPath, O_RDONLY|O_NONBLOCK);
+        fcntl(inFD, F_SETFL, fcntl(inFD, F_GETFL)&~O_NONBLOCK); //Remove nonblocking flag
+        c->inFD = inFD;
+        int outFD = open(c->outFIFOPath, O_WRONLY); //This should not fail, client has opened in read mode
+        c->outFD = outFD;
+        //Connection complete, send OK to other end
+        conn_send(c, MESSAGE_OK, strlen(MESSAGE_OK)+1);
+        return c;
+    }
+}
+
+static int createProcessFIFOs(const char* basePath, Connection c) {
+    int baseLength = strlen(basePath);
+    if((c->outFIFOPath = malloc(baseLength+4+1)) == NULL)   //path+"-out"+\0
+        return 0;
+    if((c->inFIFOPath = malloc(baseLength+3+1)) == NULL)    //path+"-in"+\0
+        return 0;
+    sprintf(c->outFIFOPath, "%s-out", basePath);
+    sprintf(c->inFIFOPath, "%s-in", basePath);
+    if(mkfifo(c->outFIFOPath, 0666) == -1 || mkfifo(c->inFIFOPath, 0666) == -1) {	//0666 == anybody can read and write TODO change?
+        free(c->outFIFOPath);
+        free(c->inFIFOPath);
+        return 0;
+    }
+    return 1;
+}
+
+static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
+    int fd = open(mainServerFIFO, O_WRONLY);    //This will block if the main server isn't reading at the address
+    size_t len = strlen(c->outFIFOPath)+1;
+    if(!ensureWrite(&len, sizeof(len), fd) || !ensureWrite(c->outFIFOPath, len, fd)) {
+        close(fd);  //TODO should this be here? And below, too
+        return 0;
+    }
+    len = strlen(c->inFIFOPath)+1;
+    if(!ensureWrite(&len, sizeof(len), fd) || !ensureWrite(c->inFIFOPath, len, fd)) {
+        close(fd);
+        return 0;
+    }
+    close(fd);
     return 1;
 }

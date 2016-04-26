@@ -12,6 +12,8 @@
  */
 typedef struct connection_t* Connection;
 
+typedef struct conn_params_t* ConnectionParams;
+
 /*
  * Standard messages to communicate different statuses or actions.
  */
@@ -64,6 +66,27 @@ int conn_send(const Connection connection, const void* data, const size_t length
  * @return int 1 on success, 0 on error.
  */
 int conn_receive(const Connection conn, void** data, size_t* length);
+
+/**
+ * Sets up the current process to listen for connections at the specified
+ * address.
+ *
+ * @param char* listeningAddress Where the process should listen for connections.
+ * For connections to go through, a different process should call <i>conn_open()</i>
+ * specifying the same address.
+ * @return ConnectionParams A structure of connection parameters needed for the
+ * process to actually start accepting connections.
+*/
+ConnectionParams conn_listen(char *listeningAddress);
+
+/**
+ * Waits until there's an available connection, and returns it when it's ready.
+ * 
+ * @param ConnectionParams params Parameters for listening to connection requests.
+ * Dependent on the communication method used.
+ * @return Connection An established connection, ready to receive and send data.
+*/
+Connection conn_accept(ConnectionParams params);
 
 
 #endif /* comm_h */

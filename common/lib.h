@@ -32,5 +32,13 @@ int ensureRead(void *dest, size_t bytes, int fd);
  */
 int ensureWrite(const void *src, size_t bytes, int fd);
 
+/**
+ * Counts the number of digits in the specified number.
+ * 
+ * @param number The number to count digits for.
+ * @return int The number of digits in <i>number</i>.
+ */
+int countDigits(int number);
+
 #endif /* LIB_H */
 

@@ -32,3 +32,13 @@ int ensureWrite(const void *src, size_t bytes, int fd) {
 	}
 	return 1;
 }
+
+int countDigits(int number) {
+    int i = (number <= 0) ? 1 : 0;
+    
+    while(number != 0) {
+        number /= 10;
+        i++;
+    }
+    return i;
+}
