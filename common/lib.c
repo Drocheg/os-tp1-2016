@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
 
 int ensureRead(void *dest, size_t bytes, int fd) {
 	if(bytes == 0)
@@ -41,4 +42,21 @@ int countDigits(int number) {
         i++;
     }
     return i;
+}
+
+int scanInt(const char* msg)
+{
+    int result, done = 0;
+    do {
+        printf(msg);
+        if(scanf("%d",&result) != 1)
+        {
+            while(getchar() != '\n');   //Empty whatever's left in the buffer
+            printf("Invalid input.\n");
+        }
+        else
+            done = 1;
+    } while (!done);
+    while(getchar() != '\n');   //Empty whatever's left in the buffer
+    return result;
 }

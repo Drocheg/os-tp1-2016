@@ -97,7 +97,6 @@ Connection conn_open(const char* address) {
     conn_receive(connection, (void **)&ack, &len);
     //Step 6
     if(strcmp(ack, MESSAGE_OK) == 0) {	//Server forked and listening, open write FIFO again
-    	printf("received.\n");
     	connection->outFD = open(connection->outFIFOPath, O_WRONLY);
     	return connection;
     }
@@ -113,7 +112,6 @@ int conn_close(Connection conn) {
     close(conn->inFD);
     remove(conn->outFIFOPath);		//Removes the file
     remove(conn->inFIFOPath);
-    printf("Connection closed.\n");
     free(conn->outFIFOPath);
     free(conn->inFIFOPath);
     free(conn);

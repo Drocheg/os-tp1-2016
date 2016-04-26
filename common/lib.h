@@ -40,5 +40,13 @@ int ensureWrite(const void *src, size_t bytes, int fd);
  */
 int countDigits(int number);
 
-#endif /* LIB_H */
+/**
+ * Inputs an int from stdin, showing the specified message until a valid number
+ * is read.
+ * 
+ * @return int The read int.
+ * @see Librería de la cátedra de Programación Imperativa.
+ */
+int scanInt(const char* msg);
 
+#endif /* LIB_H */
