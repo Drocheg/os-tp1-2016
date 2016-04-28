@@ -7,6 +7,7 @@
 #include "product.h"
 
 struct product_t {
+    int id;
     char *name;
     char *description;
     float price;
@@ -34,38 +35,29 @@ void prettyPrintProduct(Product p) {
     printf("*%s*\n%s\nPrice: $%f\nStock: %i\n", getProductName(p), getProductDescription(p), getProductPrice(p), getProductStock(p));
 }
 
-/**
- * 1) strlen(name)
- * 2) name
- * 3) strlen(description)
- * 4) description
- * 5) price (float)
- * 6) stock (int)
- * @param p
- * @return 
- */
-char* serializeProduct(const Product p) {
+
+int serializeProduct(const Product p, void **dest) {
     //TODO check for errors and return NULL
     int offset = 0;
     int nameLen = strlen(p->name)+1;
     int descrLen = strlen(p->description)+1;
     int totalLen = sizeof(nameLen) + nameLen + sizeof(descrLen) + descrLen + sizeof(p->price) + sizeof(p->stock);
-    char * result = malloc(totalLen);
-    memcpy(result, &nameLen, sizeof(nameLen));
+    *dest = malloc(totalLen);
+    memcpy(*dest, &nameLen, sizeof(nameLen));
     offset += sizeof(nameLen);
-    strcpy(result+offset, p->name);
+    memcpy(*dest+offset, p->name, nameLen);
     offset += nameLen;
-    memcpy(result+offset, &descrLen, sizeof(descrLen));
+    memcpy(*dest+offset, &descrLen, sizeof(descrLen));
     offset += sizeof(descrLen);
-    strcpy(result+offset, p->description);
+    strcpy(*dest+offset, p->description);
     offset += descrLen;
-    memcpy(result+offset, &(p->price), sizeof(p->price));
+    memcpy(*dest+offset, &(p->price), sizeof(p->price));
     offset += sizeof(p->price);
-    memcpy(result+offset, &(p->stock), sizeof(p->stock));
-    return result;
+    memcpy(*dest+offset, &(p->stock), sizeof(p->stock));
+    return 1;
 }
 
-Product unserializeProduct(const char* data) {
+Product unserializeProduct(const void* data) {
     //TODO check for errors and return NULL
     Product result = malloc(sizeof(*result));
     int nameLen, descrLen, offset = 0;
@@ -83,6 +75,10 @@ Product unserializeProduct(const char* data) {
     offset += sizeof(result->price);
     memcpy(&(result->stock), data+offset, sizeof(result->stock));
     return result;
+}
+
+int getProductId(Product p) {
+    return p->id;
 }
 
 char *getProductName(Product p) {
