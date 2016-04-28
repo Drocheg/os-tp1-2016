@@ -8,6 +8,10 @@ client:
 server:
 	make -f server/Makefile all
 
+logger:
+	make -f logger/Makefile all
+
 clean:
 	make -f client/Makefile clean
 	make -f server/Makefile clean
+	make -f logger/Makefile clean
