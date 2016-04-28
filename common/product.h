@@ -16,6 +16,10 @@ void freeProduct(Product p);
 
 void prettyPrintProduct(Product p);
 
+char* serializeProduct(const Product p);
+
+Product unserializeProduct(const char* data);
+
 char *getProductName(Product p);
 
 char *getProductDescription(Product p);

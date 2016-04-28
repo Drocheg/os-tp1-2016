@@ -13,9 +13,14 @@
 
 #include <product.h>
 
-
-
 int main(int argc, char** argv) {
+//    Product p = newProduct("Test", "Test product", 42.42, 42);
+//    prettyPrintProduct(p);
+//    char *s = serializeProduct(p);
+//    printf("%.1s\n", s);
+//    prettyPrintProduct(unserializeProduct(s));
+//    return 0;
+    
     printf("Connecting to server via %s...", getServerAddress());
     fflush(stdout);
     Connection c = conn_open(getServerAddress());

@@ -20,6 +20,9 @@ typedef struct conn_params_t* ConnectionParams;
 #define MESSAGE_OK "KCOOL"
 #define MESSAGE_ERROR "OHNOES"
 #define MESSAGE_CLOSE "KTHXBAI"
+#define MESSAGE_BUY "GIMMEDIS"
+#define MESSAGE_LIST_START "WHATCHUGOT"
+
 
 /*
  * Creates a connection between the current process and a different one.

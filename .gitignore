@@ -44,3 +44,4 @@ CMakeLists.txt
 
 # Debug files
 *.dSYM/
+/netbeans/Smokey Joe's/netbeans/nbproject/private/
