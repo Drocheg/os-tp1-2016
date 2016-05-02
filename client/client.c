@@ -28,17 +28,14 @@ int main(int argc, char** argv) {
     printf("connected.\n");
     printf("Welcome to IAC (Inter-Alcohol Communication)!\n");
     int done = 0, option;
-    Order order = malloc(sizeof(*order)); //Esto es el resumen de las ordenes
+    Order order = malloc(sizeof(*order)); //Esto es el resumen de las ordenes. Maxima cantidad de diferentes productos es 16.
     Product *products;//Esto tiene los productos que le manda la base de dato. 
-    int cantProducts = 0; 
-    requestProducts(products, &cantProducts); //TODO deberia pedirle los productos al servidor.
+    int numProducts = 0; 
+    requestProducts(products, &numProducts); //TODO deberia pedirle los productos al servidor.
     do {
-        printProducts(products, cantProducts); //TODO imprime en pantalla los productos con sus stock y descripcion y bla bla.
+        printProducts(products, numProducts); 
         option = scanInt("Use the numbers to select the product you would like to purchase\n Press 0 to Exit and 1 to Finish your purchase\n"); //TODO despues vemos la tecla y eso bien. Como hacer con mucho productos bla bla.
-
-        
-        //option = scanInt("What would you like to do?\n\t1) Browse products\n\t2) Purchase selected products\n\t3) Exit\n\n");
-
+                
         switch(option) {
             case 0:
                 done = 1;
@@ -46,10 +43,10 @@ int main(int argc, char** argv) {
             case 1:
                 finishPurchase(order);
                 //TODO que pasa si hay un error en la compra por desincronisacion? Avisar que hay algo mal y re imprimir.
-                done = 1;
+                //No sale, sale con el 0. Esto es para confirmar compra. ???
                 break;
             default:
-                if(option > 0 && option <= cantProducts) { //Because there are N products and 0 is exit. The products are the entries from 1 to N.
+                if(option > 0 && option <= numProducts) { //Because there are N products and 0 is exit. The products are the entries from 1 to N.
                     startPurchase(option-2); //Entrar en la etapa de comprar. Se pasa opcion-2 porque ese es el indice en el array.
                 }
                 else{
@@ -70,42 +67,43 @@ int main(int argc, char** argv) {
 
 void startPurchase(int index, Product *products, Order order) {
     int done = 0;
-    int cant = 0;
-    //Verda:
+    int num = 0;
+    //Verda:  
     
     do{
         prettyPrintProduct(products[index])
-        cant=scanInt("How many do you want to buy?\n Send 0 to cancel\n"); 
-        if(cant<0 || cant>getProductStock(products[index])) {
+        num=scanInt("How many do you want to buy?\n Send 0 to cancel\n"); 
+        if(num<0 || num>getProductStock(products[index])) {
             printf("Need to put a valid quantity");
         }
         else {
             done=1;
-            if(cant>0) {
-                addToOrder(products[index], order, cant);
-
+            if(num != 0){
+                addProduct(products[index], order, num);
             }
         }
 
     }while(!done);
-
+    printOrder(order);
 }
 
 
-void printProducts(Product *products, int cant) {
-    for(int i=0; i<cant; i++){
+void printProducts(Product *products, int num) {
+    for(int i=0; i<num; i++){
         prettyPrintProduct(products[i]);
     }
 }
 
-void addToOrder(Product product, Order order, int cant){
-
+void addProduct(Product product, Order order, int num){ //TODO checkear errores.
+    addToOrder(order, getProductId(product), num);
 }
 
-void requestProducts(/*products, &cantProducts*/){
-    //TODO
+void requestProducts(Product * products, int * numProducts){
+    //TODO hablar con el server para requestiar los productolis
 }
 
 void finishPurchase(Order order){
     //TODO
+    //Primero pido el adress y despues mando la orden con el adress.?? O pido el adress primero?
 }
+
