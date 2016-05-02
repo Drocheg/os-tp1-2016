@@ -7,11 +7,18 @@
 
 #include <lib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h> // For sleeping
 #include <config.h>
 #include <comm.h>
 #include <product.h>
 #include <order.h>
+
+void startPurchase(int index, Product *products, Order order);
+void finishPurchase(Order order);
+void printProducts(Product *products, int num);
+void addProduct(Product product, Order order, int num);
+void requestProducts(Product * products, int * numProducts);
 
  /**
 Voy a hacer que le pida los productos al servidor, despues hace todo un sistema de compra 
@@ -28,7 +35,7 @@ int main(int argc, char** argv) {
     printf("connected.\n");
     printf("Welcome to IAC (Inter-Alcohol Communication)!\n");
     int done = 0, option;
-    Order order = malloc(sizeof(*order)); //Esto es el resumen de las ordenes. Maxima cantidad de diferentes productos es 16.
+    Order order = newOrder(); //Esto es el resumen de las ordenes. Maxima cantidad de diferentes productos es 16.  
     Product *products;//Esto tiene los productos que le manda la base de dato. 
     int numProducts = 0; 
     requestProducts(products, &numProducts); //TODO deberia pedirle los productos al servidor.
@@ -47,7 +54,7 @@ int main(int argc, char** argv) {
                 break;
             default:
                 if(option > 0 && option <= numProducts) { //Because there are N products and 0 is exit. The products are the entries from 1 to N.
-                    startPurchase(option-2); //Entrar en la etapa de comprar. Se pasa opcion-2 porque ese es el indice en el array.
+                    startPurchase(option-2, products, order); //Entrar en la etapa de comprar. Se pasa opcion-2 porque ese es el indice en el array.
                 }
                 else{
                     printf("Invalid option selected.\n");   
@@ -62,6 +69,7 @@ int main(int argc, char** argv) {
     conn_close(c);
     printf("done.\n");
     printf("See you next time!\n");
+    freeOrder(order);
     return 0;
 }
 
@@ -71,7 +79,7 @@ void startPurchase(int index, Product *products, Order order) {
     //Verda:  
     
     do{
-        prettyPrintProduct(products[index])
+        prettyPrintProduct(products[index]);
         num=scanInt("How many do you want to buy?\n Send 0 to cancel\n"); 
         if(num<0 || num>getProductStock(products[index])) {
             printf("Need to put a valid quantity");
@@ -84,7 +92,7 @@ void startPurchase(int index, Product *products, Order order) {
         }
 
     }while(!done);
-    printOrder(order);
+    printTemporalOrder(order);
 }
 
 
@@ -104,6 +112,10 @@ void requestProducts(Product * products, int * numProducts){
 
 void finishPurchase(Order order){
     //TODO
-    //Primero pido el adress y despues mando la orden con el adress.?? O pido el adress primero?
+    //Primero pido el address y despues mando la orden con el address.?? O pido el address primero?
+    char * address;
+    printf("Whats your address? "); 
+    scanf("%s", address);//Esto era super inseguro no?
+  
 }
 
