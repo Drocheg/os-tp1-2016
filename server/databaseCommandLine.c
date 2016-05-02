@@ -2,19 +2,28 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <product.h>
 
-typedef int (*databaseCallback)(void*, int, char**, char**);
-
-int printRow(void *data, int numCols, char **colInfo, char **colName) {
+int printRow(void *unused, int numCols, char **colData, char **colName) {
     int i;
     for(i=0; i < numCols; i++) {
-        printf("%s = %s\n", colName[i], colInfo[i] ? colInfo[i] : "NULL");
+        printf("%s = %s\n", colName[i], colData[i] ? colData[i] : "NULL");
     }
     printf("\n");
     return 0;
 }
 
 int main() {
+//    Product *prodArray;
+//    int numProducts = db_get_products(db_connect(), &prodArray);
+//    printf("%i products available:\n", numProducts);
+//    for(int i = 0; i < numProducts; i++) {
+//        prettyPrintProduct(prodArray[i]);
+//        printf("\n");
+//    }
+//    return 0;
+    
+    
     sqlite3* conn = db_connect();
     char* errorMsg = NULL;
     char query[1024];

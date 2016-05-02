@@ -4,12 +4,14 @@ nbproject/*
 .cproject
 .dropbox.attr
 .idea/*
-.settings/*
-.prokect
+*/.settings/*
+.project
 Makefile-netbeans
 .project
 CMakeLists.txt
 *.bin
+*.stackdump
+netbeans/*
 
 # Object files
 *.o
