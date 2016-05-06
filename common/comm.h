@@ -25,14 +25,11 @@ typedef struct conn_params_t* ConnectionParams;
 
 
 /*
- * Creates a connection between the current process and a different one.
- * Depending on what the current process is acting at, the other endpoint can be
- * the main server, a forked server or a client.
+ * Opens a connection with the specified address. Another process should have
+ * called <i>conn_open</i> with the same address for the connection to establish. 
  *
- * @param const char *address A formatted address of the other endpoint of the
- * connection to establish.
- * @return Connection The connection, ready to transmit and receive data, or
- * NULL on error.
+ * @param const char *address A formatted address where to listen to requests.
+ * @return Connection The connection on success, or NULL on error.
  */
 Connection conn_open(const char* address);
 
@@ -47,7 +44,7 @@ int conn_close(Connection connection);
 
 /*
  * Sends the specified message to the other endpoint of the specified connection.
- * To expect a response, call <i>conn_receive()</i> afterwards.
+ * To expect a response, call <i>conn_receive</i> afterwards.
  *
  * @param const Connection c The connection through which to send data.
  * @param const void* data The data to send.
@@ -87,7 +84,8 @@ ConnectionParams conn_listen(char *listeningAddress);
  * 
  * @param ConnectionParams params Parameters for listening to connection requests.
  * Dependent on the communication method used.
- * @return Connection An established connection, ready to receive and send data.
+ * @return Connection An established connection, ready to receive and send data,
+ * or NULL on error.
 */
 Connection conn_accept(ConnectionParams params);
 

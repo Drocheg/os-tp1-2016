@@ -33,7 +33,10 @@ int main(int argc, char **argv) {
 		printf("Listening for clients...");
 		fflush(stdout);
 		Connection c = conn_accept(connParams);
-		if(c == NULL)	//TODO
+		if(c == NULL) { //TODO
+                    printf("Error accepting connection. Ignoring?\n");
+                    continue;
+                }
 		printf("client connected.\n");
 		if (!fork()) {   //Child
 			isParentServer = 0;

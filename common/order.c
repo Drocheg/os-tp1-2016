@@ -1,4 +1,7 @@
 #include "order.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 struct orderEntry_t{
 	int product_id;
@@ -61,18 +64,18 @@ int serializeOrder(const Order o, void **dest) {
     return 1;
 }
 
-Product unserializeOrder(const void* data) {
+Order unserializeOrder(const void* data) {
     //TODO check for errors and return NULL
-    Order order = malloc(sizeof(*order));
+    Order result = malloc(sizeof(*result));
     int addressLen, offset = 0;
     memcpy(&addressLen, data, sizeof(addressLen));
     offset += sizeof(addressLen);
-    order->address = malloc(addressLen);
-    strcpy(order->address, data+offset);
+    result->address = malloc(addressLen);
+    strcpy(result->address, data+offset);
     offset += addressLen;
-    memcpy(&(order->numEntries), data+offset, sizeof(order->numEntries));
-    offset += sizeof(order->numEntries);
-    memcpy(&(order->items), data+offset, sizeof(order->items));
+    memcpy(&(result->numEntries), data+offset, sizeof(result->numEntries));
+    offset += sizeof(result->numEntries);
+    memcpy(&(result->items), data+offset, sizeof(result->items));
     return result;
 }
 

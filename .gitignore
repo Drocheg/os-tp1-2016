@@ -11,6 +11,9 @@ Makefile-netbeans
 CMakeLists.txt
 *.stackdump
 netbeans/*
+Flowchart.vsdx
+docs/SQLite/*
+
 
 # Object files
 *.o
