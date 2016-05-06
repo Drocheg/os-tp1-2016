@@ -1,5 +1,4 @@
 #include "database.h"
-#include <product.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -31,6 +30,10 @@ int db_get_products(sqlite3* connection, Product **destArray) {
     *destArray = calloc(numProducts, sizeof(*destArray));
     db_run_query(connection, "SELECT name, description, price, quantity FROM products", (databaseCallback)productLoader, *destArray, &errormsg);
     return numProducts;
+}
+
+int db_place_order(sqlite3* connection, Order order) {
+    
 }
 
 sqlite3 *db_connect() {

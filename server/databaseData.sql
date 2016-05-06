@@ -1,25 +1,25 @@
 CREATE TABLE IF NOT EXISTS products(
-  id 			      INTEGER		PRIMARY KEY NOT NULL,
-  name 			    TEXT		NOT NULL,
-  quantity		  INTEGER		NOT NULL DEFAULT 0,
-  price			    FLOAT		NOT NULL,
-  description	  TEXT
+	id			INTEGER		PRIMARY KEY NOT NULL,
+	name		TEXT		NOT NULL,
+	quantity	INTEGER		NOT NULL DEFAULT 0 check(quantity >= 0),
+	price		FLOAT		NOT NULL,
+	description	TEXT
 );
 
 CREATE TABLE IF NOT EXISTS orders(
-  id          INTEGER PRIMARY KEY NOT NULL,
-  total       FLOAT 	NOT NULL,
-  address     TEXT,
-  `time`      INTEGER NOT NULL -- Unix time
+	id			INTEGER PRIMARY KEY NOT NULL,
+	total		FLOAT 	NOT NULL,
+	address		TEXT,
+  	`time`		INTEGER NOT NULL -- Unix time
 );
 
 CREATE TABLE IF NOT EXISTS orderEntry(
-  id          INTEGER PRIMARY KEY NOT NULL,
-  order_id    INTEGER NOT NULL,
-  product_id  INTEGER NOT NULL,
-  quantity    INTEGER NOT NULL DEFAULT 1,
-  FOREIGN KEY (order_id) REFERENCES orders(id),
-  FOREIGN KEY (product_id) REFERENCES products(id)
+	id          INTEGER PRIMARY KEY NOT NULL,
+	order_id    INTEGER NOT NULL,
+	product_id  INTEGER NOT NULL,
+	quantity    INTEGER NOT NULL DEFAULT 1,
+	FOREIGN KEY (order_id) REFERENCES orders(id),
+	FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
 INSERT INTO products VALUES(1, "Vodka", 60, 30.5, "A Russian favourite imported from the heart of the coldest place on Earth, Serbia");

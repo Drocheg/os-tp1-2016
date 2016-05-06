@@ -25,7 +25,7 @@ int main() {
     
     
     sqlite3* conn = db_connect();
-    char* errorMsg = NULL;
+    char* errorMsg = NULL;    
     char query[1024];
     while(1) {
         printf("Enter query or q to exit: ");

@@ -9,7 +9,6 @@ nbproject/*
 Makefile-netbeans
 .project
 CMakeLists.txt
-*.bin
 *.stackdump
 netbeans/*
 
@@ -43,7 +42,7 @@ netbeans/*
 *.i*86
 *.x86_64
 *.hex
+*.bin
 
 # Debug files
 *.dSYM/
-/netbeans/Smokey Joe's/netbeans/nbproject/private/

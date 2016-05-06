@@ -25,8 +25,8 @@ default: server
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 	
-database: #$(OBJECTS_DATABASE)
-	#$(CC) $(CFLAGS) -pthread -lpthread $(OBJECTS_DATABASE) -o database.bin -ldl
+database: $(OBJECTS_COMMON) $(OBJECTS_DATABASE)
+	$(CC) $(CFLAGS) -pthread -lpthread $(OBJECTS_DATABASE) -o database.bin -ldl
 	
 database_commandline: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_DATABASE_COMMANDLINE)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_DATABASE_COMMANDLINE) -o db_commandline.bin -pthread -lpthread -ldl
