@@ -78,7 +78,7 @@ int addParam(Request request, DataType dataType, size_t size, void *arg);
  * Deletes an argument from the request
  * Returns 0 on success, -1 otherwise (leaving the request as it was before calling)
  * Deleting a non-existent arguement is considered a success
- * * If no request is specified, or if index is negative, -1 is returned
+ * If no request is specified, or if index is negative, -1 is returned
  */
 int deleteParam(Request request, int index);
 
