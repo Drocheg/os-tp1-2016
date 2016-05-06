@@ -6,6 +6,8 @@
 #define RAWDATA 0
 #define STRING 1
 #define REQUEST 2
+#define PRODUCTS 3
+#define INT 4
 
 typedef struct data_t * Data;
 
