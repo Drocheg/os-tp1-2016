@@ -12,12 +12,14 @@
 #include <comm.h>
 #include <product.h>
 #include <order.h>
+#include <request.h>
+#include <data.h>
 
 void startPurchase(int index, Product *products, Order order);
 void finishPurchase(Order order);
 void printProducts(Product *products, int num);
 void addProduct(Product product, Order order, int num);
-void requestProducts(Product * products, int * numProducts);
+void requestProducts(Product * products, int * numProducts, Connection c);
 
  /**
 Voy a hacer que le pida los productos al servidor, despues hace todo un sistema de compra 
@@ -41,7 +43,7 @@ int main(int argc, char** argv) {
     Order order = newOrder(); //Esto es el resumen de las ordenes. Maxima cantidad de diferentes productos es 16.  
     Product *products;//Esto tiene los productos que le manda la base de dato. 
     int numProducts = 0; 
-    requestProducts(products, &numProducts); //TODO deberia pedirle los productos al servidor.
+    requestProducts(products, &numProducts, c); //TODO deberia pedirle los productos al servidor.
     do {
         printProducts(products, numProducts); 
         option = scanInt("Use the numbers to select the product you would like to purchase\n Press 0 to Exit and 1 to Finish your purchase\n"); //TODO despues vemos la tecla y eso bien. Como hacer con mucho productos bla bla.
@@ -109,8 +111,40 @@ void addProduct(Product product, Order order, int num){ //TODO checkear errores.
     addToOrder(order, getProductId(product), num);
 }
 
-void requestProducts(Product * products, int * numProducts){
-    //TODO hablar con el server para requestiar los productolis
+void requestProducts(Product * products, int * numProducts){ //TODO que los errores no sean prints
+    Request requestProducts = createRequest(1); //TODO
+    Response responseProducts = request(c, requestProducts); //TODO TODO
+    if(getResponseError(responseProducts) != 0){
+        printf("Error en la request de productos");
+        return -1;
+    }
+
+    int argc = getArgc(responseProducts);
+    if(argc!=2){
+        printf("Cantidad erronea de argumentos en requestProducts");
+        return -1;
+    }
+
+    Argument * arguments = getArguments(responseProducts);
+
+    Datatype data1 =getDataType(arguments[0]);
+    if(data1!=INT){
+        printf("El primer argumento de requestProducts deberia ser un int");
+        return -1;
+    }
+
+    Datatype data2 =getDataType(arguments[1]);
+    if(data2!=PRODUCTS){
+        printf("El segundo argumento de requestProducts deberia ser un products");
+        return -1;
+    }
+    
+    numProducts = (int)getArg(arguments[0]);
+    products = (Product *) getArg(arguments[1]);
+
+    return 0;
+    
+
 }
 
 void finishPurchase(Order order){
