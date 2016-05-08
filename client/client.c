@@ -8,7 +8,6 @@
 #include <lib.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h> // For sleeping
 #include <config.h>
 #include <comm.h>
 #include <product.h>
@@ -32,6 +31,10 @@ int main(int argc, char** argv) {
     printf("Connecting to server via %s...", getServerAddress());
     fflush(stdout);
     Connection c = conn_open(getServerAddress());
+    if(c == NULL) {
+        printf("Couldn't connect. Aborting.\n");
+        return -1;
+    }
     printf("connected.\n");
     printf("Welcome to IAC (Inter-Alcohol Communication)!\n");
     int done = 0, option;

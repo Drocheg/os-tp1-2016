@@ -46,6 +46,19 @@ static int createProcessFIFOs(const char* basePath, Connection c);
  */
 static int sendFIFOPaths(Connection c, const char* mainServerFIFO);
 
+/**
+ * Wrapper function for <i>select()</i> function.
+ * 
+ * @param maxFD The highest FD number to check.
+ * @param readFDs Array of file descriptors to check for reading.
+ * @param writeFDs Array of file descriptors to check for writing.
+ * @param errFDs Array of file descriptors to check for errors.
+ * @param timeoutSec Max seconds until timeout, or -1 if infinite.
+ * @param timeoutUSec Max microseconds until timeout, or -1 if infinite.
+ * @return int Whatever select() returned.
+ */
+static int select_wrapper(int maxFD, const int readFDs[], const int writeFDs[], const int errFDs[], int timeoutSec, int timeoutUSec);
+
 /*
  * Creates a connection between the current process and a server.
  * The procedure is as follows:
@@ -77,7 +90,7 @@ Connection conn_open(const char* address) {
     char buff[5+countDigits(pid)+1];    // "/tmp/" + pid + \0
     sprintf(buff, "/tmp/%i", pid);
     if(!createProcessFIFOs(buff, connection)) {
-        printf("Couldn't create connection FIFOs for process #%i\n", getpid());
+        printf("Couldn't create connection FIFOs for process #%i\n", pid);
         return NULL;
     }
     
@@ -86,15 +99,30 @@ Connection conn_open(const char* address) {
     fcntl(connection->inFD, F_SETFL, fcntl(connection->inFD, F_GETFL)&~O_NONBLOCK);	//Remove nonblocking flag
     
     //Step 3
-    if(!sendFIFOPaths(connection, getServerAddress())) {
-        printf("Couldn't send FIFO information to main server for process #%i\n", getpid());
+    if(!sendFIFOPaths(connection, address)) {
+        printf("Couldn't send FIFO information to main server for process #%i\n", pid);
         return NULL;
     }
     
     //Wait for OK (steps 4-5)
+    /*
+     * Avoid race condition (reading from FIFO while the server is opening the
+     * FIFO, conn_receive will fail until it's opened for writing by the server)
+     * with select()
+     */
+    int fds[1] = {connection->inFD};
+    int selectResult = select_wrapper(connection->inFD+1, fds, NULL, NULL, 10, 0);
+    if(selectResult == -1) {  //Error
+        printf("Error with select(). Aborting.\n");
+        return NULL;
+    }
+    else if(selectResult == 0) {    //Timed out
+        printf("Timed out. Aborting.\n");
+        return NULL;
+    }
+    //Else, FIFO is open and with data
     char *ack;
-    size_t len = strlen(MESSAGE_OK)+1;
-    conn_receive(connection, (void **)&ack, &len);
+    conn_receive(connection, (void **)&ack, NULL);
     //Step 6
     if(strcmp(ack, MESSAGE_OK) == 0) {	//Server forked and listening, open write FIFO again
     	connection->outFD = open(connection->outFIFOPath, O_WRONLY);
@@ -127,6 +155,10 @@ int conn_send(const Connection conn, const void* data, const size_t length) {
 }
 
 int conn_receive(const Connection conn, void** data, size_t* length) {
+    if(length == NULL) {    //If there's nowhere to store the read length, store it within the function, then discard
+        size_t len2;
+        length = &len2;
+    }
     if(!ensureRead(length, sizeof(*length), conn->inFD)) {
         return 0;
     }
@@ -144,41 +176,37 @@ int conn_receive(const Connection conn, void** data, size_t* length) {
 ConnectionParams conn_listen(char *listeningAddress) {
     //Create FIFO where process will listen for connection requests
     if(mkfifo(listeningAddress, 0666) == -1) {    //0666 == anybody can read and write TODO change?
-        fprintf(stderr, "Error creating connection FIFOs for process #%i.\n", getpid());
+        printf("Error creating connection FIFOs for process #%i.\n", getpid());
         return NULL;
     }
     ConnectionParams p = malloc(sizeof(*p));
-    int fd = open(listeningAddress, O_RDONLY|O_NONBLOCK);           // Open in non-blocking read mode to prevent blocking, but remove flag immediately after
+    int fd = open(listeningAddress, O_RDWR);/*O_RDONLY|O_NONBLOCK);           // Open in non-blocking read mode to prevent blocking, but remove flag immediately after
     if(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL)&~O_NONBLOCK) == -1) {  // Remove nonblocking flag, we want reads to be blocking later
         printf("Couldn't open requests file in non-blocking mode for process #%i\n", getpid());
         return NULL;
-    }
+    }*/
     p->connRequestsFD = fd;
     return p;
 }
 
 Connection conn_accept(ConnectionParams params) {
-    fd_set rfds;            //File Descriptor set for select() - has to be reconstructed every time
-    // struct timeval tv;   //Timeout struct for select()
-    // tv.tv_sec = 5;
-    // tv.tv_usec = 0;
-    FD_ZERO(&rfds);
-    FD_SET(params->connRequestsFD, &rfds);
-    
-    int selectResult = select(params->connRequestsFD+1, &rfds, NULL, NULL, /*&tv*/NULL);  //Last param = timeout, NULL = no timeout
+    int fds[1] = {params->connRequestsFD};
+    int selectResult = select_wrapper(params->connRequestsFD+1, fds, NULL, NULL, -1, -1);
     if (selectResult == -1) {  //Error
         printf("Error with select(). Aborting.\n");
         return NULL;
     }
+//    else if(selectResult == 0) {    //Timed out
+//        return NULL;    //TODO remove timeout? NULL is returned for errors
+//    }
     else {
-        printf("Client connected.\n");
         Connection c = malloc(sizeof(*c));
         /*
-         * Read:
+         * Read connection info as follows:
          * 1) Out pipe path length
-         * 2) Out pipe as in pipe
+         * 2) Out pipe as IN pipe
          * 3) In pipe path length
-         * 4) In pipe as out pipe
+         * 4) In pipe as OUT pipe
          */
         size_t len = -1;
         if(!ensureRead(&len, sizeof(len), params->connRequestsFD))
@@ -191,7 +219,7 @@ Connection conn_accept(ConnectionParams params) {
         c->outFIFOPath = malloc(len);
         if(!ensureRead(c->outFIFOPath, len, params->connRequestsFD))
             return NULL;
-        //Complete connection
+        //Open the FIFOs
         int inFD = open(c->inFIFOPath, O_RDONLY|O_NONBLOCK);
         fcntl(inFD, F_SETFL, fcntl(inFD, F_GETFL)&~O_NONBLOCK); //Remove nonblocking flag
         c->inFD = inFD;
@@ -233,4 +261,34 @@ static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
     }
     close(fd);
     return 1;
+}
+
+static int select_wrapper(int maxFD, const int readFDs[], const int writeFDs[], const int errFDs[], int timeoutSec, int timeoutUSec) {
+    fd_set readSet, writeSet, errSet;
+    if(readFDs != NULL) {
+        FD_ZERO(&readSet);
+        for(int i = 0; i < sizeof(readFDs)/sizeof(readFDs[0]); i++) {
+            FD_SET(readFDs[i], &readSet);
+        }
+    }
+    if(writeFDs != NULL) {
+        FD_ZERO(&writeSet);
+        for(int i = 0; i < sizeof(writeFDs)/sizeof(writeFDs[0]); i++) {
+            FD_SET(writeFDs[i], &writeSet);
+        }
+    }
+    if(errFDs != NULL) {
+        FD_ZERO(&errSet);
+        for(int i = 0; i < sizeof(errFDs)/sizeof(errFDs[0]); i++) {
+            FD_SET(errFDs[i], &errSet);
+        }
+    }
+    struct timeval timeout;
+    timeout.tv_sec = timeoutSec < 0 ? 0 : timeoutSec;
+    timeout.tv_usec = timeoutUSec < 0 ? 0 : timeoutUSec;
+    return select(maxFD,
+                    readFDs == NULL ? NULL : &readSet,
+                    writeFDs == NULL ? NULL : &writeSet,
+                    errFDs == NULL ? NULL : &errSet,
+                    timeoutSec < 0 && timeoutUSec < 0 ? NULL : &timeout);
 }

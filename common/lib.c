@@ -12,7 +12,7 @@ int ensureRead(void *dest, size_t bytes, int fd) {
 	while(readBytes < bytes) {
 		readResult = read(fd, (char *)dest+readBytes, bytes-readBytes);
 		if(readResult == -1) {
-			return 0;
+                    return 0;
 		}
 		readBytes += readResult;
 	}

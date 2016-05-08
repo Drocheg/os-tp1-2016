@@ -60,7 +60,9 @@ int conn_send(const Connection connection, const void* data, const size_t length
  *
  * @param const Connection c The connection from which to read data.
  * @param void** data Where to store the received data.
- * @param size_t* length Where to store the length of the received data.
+ * @param size_t* length Where to store the length of the received data. Can be
+ * NULL if this is not needed (e.g. if the length of the data to receive is
+ * known)
  * This is read first, in order to allocate just enough memory for the received
  * data.
  * @return int 1 on success, 0 on error.
