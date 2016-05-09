@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
                 done = 1;
                 break;
             case 1:
-                finishPurchase(order);
+                finishPurchase(order, c);
                 //TODO que pasa si hay un error en la compra por desincronisacion? Avisar que hay algo mal y re imprimir.
                 //No sale, sale con el 0. Esto es para confirmar compra. ???
                 break;
@@ -111,6 +111,8 @@ void addProduct(Product product, Order order, int num){ //TODO checkear errores.
     addToOrder(order, getProductId(product), num);
 }
 
+/**
+
 void requestProducts(Product * products, int * numProducts){ //TODO que los errores no sean prints
     Request requestProducts = createRequest(1); //TODO
     Response responseProducts = request(c, requestProducts); //TODO TODO
@@ -147,12 +149,67 @@ void requestProducts(Product * products, int * numProducts){ //TODO que los erro
 
 }
 
-void finishPurchase(Order order){
+*/
+
+
+void requestProducts(Product * products, int * numProducts, Connection c){ //TODO que los errores no sean prints
+    Message messageProducts = createMessage(1); //TODO
+    sendMessage(c, messageProducts); //TODO TODO message devuelve un msj? No deberia.
+    Message responseProducts = listenMessage(c);
+    if(getMessageCode(responseProducts) < 0){
+        printf("Error en la orden de productos");
+        return -1;
+    }
+
+    int argc = getArgc(responseProducts);
+    if(argc!=2){
+        printf("Cantidad erronea de argumentos en el message de respuesta del servidor en messageProducts");
+        return -1;
+    }
+
+    Argument * arguments = getArguments(responseProducts);
+
+    Datatype data1 =getDataType(arguments[0]);
+    if(data1!=INT){
+        printf("El primer argumento de messageProducts deberia ser un int");
+        return -1;
+    }
+
+    Datatype data2 =getDataType(arguments[1]);
+    if(data2!=PRODUCTS){
+        printf("El segundo argumento de messageProducts deberia ser un products");
+        return -1;
+    }
+    
+    numProducts = (int)getArg(arguments[0]);
+    products = (Product *) getArg(arguments[1]);
+
+    return 0;
+    
+
+}
+
+
+void finishPurchase(Order order, Connection c){
     //TODO
     //Primero pido el address y despues mando la orden con el address.?? O pido el address primero?
     char * address;
     printf("Whats your address? "); 
-    scanf("%s", address);//Esto era super inseguro no?
-  
+    scanf("%s", address);//Esto era super inseguro no? TODO hacer esto bien.
+
+    order->address = address; //Puedo hacer esto fuera de order.c? TODO crear una funcion en order.c
+
+    Message messageOrder = createMessage(2);
+    Data data = newData(order, sizeof(*order), ORDER);
+    addParam(messageOrder, data, sizeof(*order), order); //No tiene mucho sentido. La info esta en data o en addParam? Creo que algo quedo viejo.
+    sendMessage(c, messageOrder);
+
+    Message responseOrder = listenMessage(c);
+    int code = getMessageCode(responseOrder); 
+    if(code==0){
+        printf("Todo OK en finish purchase\n");
+    }else{
+        printf("No se puedo completar la compra\n");
+    }
 }
 
