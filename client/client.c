@@ -12,14 +12,12 @@
 #include <comm.h>
 #include <product.h>
 #include <order.h>
-#include <request.h>
-#include <data.h>
 
 void startPurchase(int index, Product *products, Order order);
-void finishPurchase(Order order);
+void finishPurchase(Order order, Connection c);
 void printProducts(Product *products, int num);
 void addProduct(Product product, Order order, int num);
-void requestProducts(Product * products, int * numProducts, Connection c);
+int requestProducts(Product * products, int * numProducts, Connection c);
 
  /**
 Voy a hacer que le pida los productos al servidor, despues hace todo un sistema de compra 
@@ -152,41 +150,32 @@ void requestProducts(Product * products, int * numProducts){ //TODO que los erro
 */
 
 
-void requestProducts(Product * products, int * numProducts, Connection c){ //TODO que los errores no sean prints
-    Message messageProducts = createMessage(1); //TODO
-    sendMessage(c, messageProducts); //TODO TODO message devuelve un msj? No deberia.
-    Message responseProducts = listenMessage(c);
-    if(getMessageCode(responseProducts) < 0){
-        printf("Error en la orden de productos");
-        return -1;
-    }
-
-    int argc = getArgc(responseProducts);
-    if(argc!=2){
-        printf("Cantidad erronea de argumentos en el message de respuesta del servidor en messageProducts");
-        return -1;
-    }
-
-    Argument * arguments = getArguments(responseProducts);
-
-    Datatype data1 =getDataType(arguments[0]);
-    if(data1!=INT){
-        printf("El primer argumento de messageProducts deberia ser un int");
-        return -1;
-    }
-
-    Datatype data2 =getDataType(arguments[1]);
-    if(data2!=PRODUCTS){
-        printf("El segundo argumento de messageProducts deberia ser un products");
-        return -1;
-    }
+int requestProducts(Product * products, int * numProducts, Connection c){ //TODO que los errores no sean prints
     
-    numProducts = (int)getArg(arguments[0]);
-    products = (Product *) getArg(arguments[1]);
+    int messageCode = 1;
+    conn_send(c, &messageCode, sizeof(messageCode));
+
+    void * serverResponse;
+    size_t responseLength;
+    int responseCode;
+    conn_receive(c, &serverResponse, &responseLength);
+    responseCode = *((int*)serverResponse);
+
+    if(responseCode < 0){
+        printf("Error en la respuesta del pedido de productos");
+        return -1;
+    }
+  
+    conn_receive(c, &serverResponse, &responseLength);
+    *numProducts = *((int*)serverResponse);
+
+    products = malloc(sizeof(*products) * (*numProducts));
+    for(int i = 0; i<*numProducts; i++){
+        conn_receive(c, &serverResponse, &responseLength);
+        products[i]=unserializeProduct(serverResponse);
+    } 
 
     return 0;
-    
-
 }
 
 
@@ -196,20 +185,24 @@ void finishPurchase(Order order, Connection c){
     char * address;
     printf("Whats your address? "); 
     scanf("%s", address);//Esto era super inseguro no? TODO hacer esto bien.
+    setAddress(order,address);
 
-    order->address = address; //Puedo hacer esto fuera de order.c? TODO crear una funcion en order.c
+    int messageCode = 2;
+    conn_send(c, &messageCode, sizeof(messageCode));
 
-    Message messageOrder = createMessage(2);
-    Data data = newData(order, sizeof(*order), ORDER);
-    addParam(messageOrder, data, sizeof(*order), order); //No tiene mucho sentido. La info esta en data o en addParam? Creo que algo quedo viejo.
-    sendMessage(c, messageOrder);
+    void * serializedOrder;
+    int serializedOrderSize;
+    serializedOrderSize=serializeOrder(order, serializedOrder);
+    conn_send(c,serializedOrder,serializedOrderSize);
 
-    Message responseOrder = listenMessage(c);
-    int code = getMessageCode(responseOrder); 
-    if(code==0){
-        printf("Todo OK en finish purchase\n");
-    }else{
-        printf("No se puedo completar la compra\n");
+    void * serverResponse;
+    size_t responseLength;
+    int responseCode;
+    conn_receive(c, &serverResponse, &responseLength);
+    responseCode = *((int*)serverResponse);
+
+    if(responseCode < 0){ //Ver que hacer cuando esta mal el stock.
+        printf("Error en la respuesta del envio de la Orden");
     }
+  
 }
-

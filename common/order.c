@@ -25,6 +25,11 @@ void freeOrder(Order order){
 	free(order);
 }
 
+
+void setAddress(Order order, char * address){
+	order-> address = address;
+}
+
 //float getTotalPrice();
 int getNumEntries(Order order){ //Me confundi no se si sirve esto.
 	return order->numEntries;
