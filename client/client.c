@@ -43,7 +43,6 @@ int main(int argc, char** argv) {
     Product *products;//Esto tiene los productos que le manda la base de dato. 
     int numProducts = 0;
     requestProducts(&products, &numProducts, c); //TODO deberia pedirle los productos al servidor.
-    printf("hola");
     do {
         printProducts(products, numProducts); 
         option = scanInt("Use the numbers to select the product you would like to purchase\n Press 0 to Exit and 1 to Finish your purchase\n"); //TODO despues vemos la tecla y eso bien. Como hacer con mucho productos bla bla.
@@ -59,7 +58,7 @@ int main(int argc, char** argv) {
                 //No sale, sale con el 0. Esto es para confirmar compra. ???
                 break;
             default:
-                if(option > 0 && option <= numProducts) { //Because there are N products and 0 is exit. The products are the entries from 1 to N.
+                if(option > 0 && option-2 <= numProducts) { //Because there are N products and 0 is exit. The products are the entries from 1 to N.
                     startPurchase(option-2, products, order); //Entrar en la etapa de comprar. Se pasa opcion-2 porque ese es el indice en el array.
                 }
                 else{
@@ -154,24 +153,34 @@ int requestProducts(Product ** products, int * numProducts, Connection c){ //TOD
 void finishPurchase(Order order, Connection c){
     //TODO
     //Primero pido el address y despues mando la orden con el address.?? O pido el address primero?
-    char * address;
+    
+    char * address= "TuCasa";
+    /**
     printf("Whats your address? "); 
     scanf("%s", address);//Esto era super inseguro no? TODO hacer esto bien.
+    */
     setAddress(order,address);
+    
+ 
 
     int messageCode = 2;
     conn_send(c, &messageCode, sizeof(messageCode));
 
+    printf("Todo Ok, antes de SerializarOrder\n");
+    
     void * serializedOrder;
     size_t serializedOrderSize;
     serializedOrderSize=serializeOrder(order, &serializedOrder);
+      printf("Todo Ok, antes de MandarOrder\n");
     conn_send(c,serializedOrder,serializedOrderSize);
 
+    printf("Todo Ok\n");
     void * serverResponse;
     size_t responseLength;
     int responseCode;
     conn_receive(c, &serverResponse, &responseLength);
     responseCode = *((int*)serverResponse);
+    printf("responseCode: %d\n", responseCode);
 
     if(responseCode < 0){ //Ver que hacer cuando esta mal el stock.
         printf("Error en la respuesta del envio de la Orden");
