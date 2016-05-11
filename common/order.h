@@ -17,7 +17,7 @@ Order newOrder();
 
 void freeOrder(Order order);
 
-int serializeOrder(const Order o, void **dest);
+size_t serializeOrder(const Order o, void **dest);
 
 Order unserializeOrder(const void* data);
 

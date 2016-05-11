@@ -17,7 +17,8 @@ void startPurchase(int index, Product *products, Order order);
 void finishPurchase(Order order, Connection c);
 void printProducts(Product *products, int num);
 void addProduct(Product product, Order order, int num);
-int requestProducts(Product * products, int * numProducts, Connection c);
+int requestProducts(Product ** products, int * numProducts, Connection c);
+void endConnection(Connection c);
 
  /**
 Voy a hacer que le pida los productos al servidor, despues hace todo un sistema de compra 
@@ -40,8 +41,9 @@ int main(int argc, char** argv) {
     int done = 0, option;
     Order order = newOrder(); //Esto es el resumen de las ordenes. Maxima cantidad de diferentes productos es 16.  
     Product *products;//Esto tiene los productos que le manda la base de dato. 
-    int numProducts = 0; 
-    requestProducts(products, &numProducts, c); //TODO deberia pedirle los productos al servidor.
+    int numProducts = 0;
+    requestProducts(&products, &numProducts, c); //TODO deberia pedirle los productos al servidor.
+    printf("hola");
     do {
         printProducts(products, numProducts); 
         option = scanInt("Use the numbers to select the product you would like to purchase\n Press 0 to Exit and 1 to Finish your purchase\n"); //TODO despues vemos la tecla y eso bien. Como hacer con mucho productos bla bla.
@@ -49,6 +51,7 @@ int main(int argc, char** argv) {
         switch(option) {
             case 0:
                 done = 1;
+                endConnection(c);
                 break;
             case 1:
                 finishPurchase(order, c);
@@ -98,6 +101,12 @@ void startPurchase(int index, Product *products, Order order) {
     printTemporalOrder(order);
 }
 
+void endConnection(Connection c){
+     int messageCode = 3;
+     conn_send(c, &messageCode, sizeof(messageCode));
+     //Esperar a que me responda?
+     return;
+}
 
 void printProducts(Product *products, int num) {
     for(int i=0; i<num; i++){
@@ -109,17 +118,17 @@ void addProduct(Product product, Order order, int num){ //TODO checkear errores.
     addToOrder(order, getProductId(product), num);
 }
 
-int requestProducts(Product * products, int * numProducts, Connection c){ //TODO que los errores no sean prints
+int requestProducts(Product ** products, int * numProducts, Connection c){ //TODO que los errores no sean prints
     
     int messageCode = 1;
     printf("Sending msgCode%d\n", messageCode );
     conn_send(c, &messageCode, sizeof(messageCode));
-    sleep(1);
     void * serverResponse;
     size_t responseLength;
     int responseCode;
     conn_receive(c, &serverResponse, &responseLength);
     responseCode = *((int*)serverResponse);
+    printf("El codigo de respuesta: %d\n",responseCode);
 
     if(responseCode < 0){
         printf("Error en la respuesta del pedido de productos");
@@ -128,13 +137,16 @@ int requestProducts(Product * products, int * numProducts, Connection c){ //TODO
   
     conn_receive(c, &serverResponse, &responseLength);
     *numProducts = *((int*)serverResponse);
+    printf("Cantidad de productos %d\n", *numProducts);
 
-    products = malloc(sizeof(*products) * (*numProducts));
+    *products = malloc(sizeof(*products) * (*numProducts));
     for(int i = 0; i<*numProducts; i++){
         conn_receive(c, &serverResponse, &responseLength);
-        products[i]=unserializeProduct(serverResponse);
+        printf("responseLength: %d\n", responseLength);
+        *products[i]=unserializeProduct(serverResponse);
     } 
-
+    printf("Termina requestProducts\n");
+    prettyPrintProduct(*products[0]);
     return 0;
 }
 
@@ -151,8 +163,8 @@ void finishPurchase(Order order, Connection c){
     conn_send(c, &messageCode, sizeof(messageCode));
 
     void * serializedOrder;
-    int serializedOrderSize;
-    serializedOrderSize=serializeOrder(order, serializedOrder);
+    size_t serializedOrderSize;
+    serializedOrderSize=serializeOrder(order, &serializedOrder);
     conn_send(c,serializedOrder,serializedOrderSize);
 
     void * serverResponse;

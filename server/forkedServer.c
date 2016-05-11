@@ -27,10 +27,9 @@ void forkedServer(Connection c, DbConnection dbConnection){ //RequestProd 1 y  f
 	//De donde saco la base de datos?
 	int done = 0;
 	do{
-
 		void * clienteData;
     	size_t msgLength;
-    	conn_receive(c, clienteData, &msgLength); //Al pedo msg lenght en este caso siempre int ?? O verificar que sea sizeOf int????
+    	conn_receive(c, &clienteData, &msgLength); //Al pedo msg lenght en este caso siempre int ?? O verificar que sea sizeOf int????
     	printf("msgLength : %d\n", msgLength);
         int msgCode = *((int*)clienteData);
         printf("msgCode : %d\n", msgCode);
@@ -43,12 +42,12 @@ void forkedServer(Connection c, DbConnection dbConnection){ //RequestProd 1 y  f
     			break;
     		case 3:
     			endConnection(c, dbConnection);
+                done = 1;
     			break;
     		default:
     			printf("WAT\n");
     			break;
     	}   
-
 	}while(!done);
 }
 
@@ -71,10 +70,11 @@ void sendProducts(Connection c, DbConnection dbConnection){
 
 
     void * serializedProduct;
-    int serializedProductSize;
+    size_t serializedProductSize;
 
     for(int i = 0; i<numProducts; i++){
-        serializedProductSize=serializeProduct(products[i], serializedProduct);
+        serializedProductSize=serializeProduct(products[i], &serializedProduct);
+        printf("El tamaño del producto serializado: %d\n", serializedProductSize);
         conn_send(c,serializedProduct,serializedProductSize);
     } 
     
@@ -87,7 +87,7 @@ void receiveOrder(Connection c, DbConnection dbConnection){
     
     void * serializedOrder;
     size_t serializedOrderSize;
-    conn_receive(c, serializedOrder, &serializedOrderSize);
+    conn_receive(c, &serializedOrder, &serializedOrderSize);
     Order order = unserializeOrder(serializedOrder);
 
     int stockCheck = checkStockAndChange(order,dbConnection);//Se tiene que tener cuidado de que nadie aceda a la base de datos entre el check y el change
@@ -105,7 +105,7 @@ void receiveOrder(Connection c, DbConnection dbConnection){
 
 
 void endConnection(Connection c, DbConnection dbConnection){
-    //TODO
+    //TODO?
 }
  
 Product getProdcuts(DbConnection dbConnection){
