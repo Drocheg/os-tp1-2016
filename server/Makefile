@@ -1,8 +1,8 @@
-HEADERS_COMMON = ../common/comm.h ../common/config.h ../common/lib.h ../common/product.h
-OBJECTS_COMMON = ../common/config.o ../common/lib.o ../common/product.o ../common/commWithFIFOs.o
+HEADERS_COMMON = ../common/comm.h ../common/config.h ../common/lib.h ../common/product.h  ../common/order.h
+OBJECTS_COMMON = ../common/config.o ../common/lib.o ../common/commWithFIFOs.o ../common/product.o ../common/order.o
 
-HEADERS_SERVER = server.h
-OBJECTS_SERVER = serverWithFIFOs.o
+HEADERS_SERVER = forkedServer.h
+OBJECTS_SERVER = mainServer.o forkedServer.o
 
 HEADERS_DATABASE = ../SQLite/src/sqlite3.h database.h
 OBJECTS_DATABASE = ../SQLite/src/sqlite3.o database.o

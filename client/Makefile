@@ -1,5 +1,5 @@
-HEADERS_COMMON = ../common/comm.h ../common/config.h ../common/lib.h ../common/product.h ../common/data.h ../common/order.h
-OBJECTS_COMMON = ../common/config.o ../common/lib.o ../common/commWithFIFOs.o ../common/product.o ../common/data.o ../common/order.o
+HEADERS_COMMON = ../common/comm.h ../common/config.h ../common/lib.h ../common/product.h  ../common/order.h
+OBJECTS_COMMON = ../common/config.o ../common/lib.o ../common/commWithFIFOs.o ../common/product.o ../common/order.o
 
 HEADERS_CLIENT = 
 OBJECTS_CLIENT = client.o

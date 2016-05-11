@@ -109,52 +109,12 @@ void addProduct(Product product, Order order, int num){ //TODO checkear errores.
     addToOrder(order, getProductId(product), num);
 }
 
-/**
-
-void requestProducts(Product * products, int * numProducts){ //TODO que los errores no sean prints
-    Request requestProducts = createRequest(1); //TODO
-    Response responseProducts = request(c, requestProducts); //TODO TODO
-    if(getResponseError(responseProducts) != 0){
-        printf("Error en la request de productos");
-        return -1;
-    }
-
-    int argc = getArgc(responseProducts);
-    if(argc!=2){
-        printf("Cantidad erronea de argumentos en requestProducts");
-        return -1;
-    }
-
-    Argument * arguments = getArguments(responseProducts);
-
-    Datatype data1 =getDataType(arguments[0]);
-    if(data1!=INT){
-        printf("El primer argumento de requestProducts deberia ser un int");
-        return -1;
-    }
-
-    Datatype data2 =getDataType(arguments[1]);
-    if(data2!=PRODUCTS){
-        printf("El segundo argumento de requestProducts deberia ser un products");
-        return -1;
-    }
-    
-    numProducts = (int)getArg(arguments[0]);
-    products = (Product *) getArg(arguments[1]);
-
-    return 0;
-    
-
-}
-
-*/
-
-
 int requestProducts(Product * products, int * numProducts, Connection c){ //TODO que los errores no sean prints
     
     int messageCode = 1;
+    printf("Sending msgCode%d\n", messageCode );
     conn_send(c, &messageCode, sizeof(messageCode));
-
+    sleep(1);
     void * serverResponse;
     size_t responseLength;
     int responseCode;
