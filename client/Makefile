@@ -18,10 +18,10 @@ default: client
 client: $(OBJECTS_COMMON) $(OBJECTS_CLIENT)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_CLIENT) -o client.bin
 	
-dummyclient: $(OBJECTS_COMMON) $(OBJECTS_DUMMY_CLIENT)
+dummy: $(OBJECTS_COMMON) $(OBJECTS_DUMMY_CLIENT)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_DUMMY_CLIENT) -o dummyClient.bin
 
-all: client dummyclient
+all: client dummy
 
 clean:
 	-rm -f $(OBJECTS_COMMON)

@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <sys/select.h>
+#include <sys/file.h>
 
 struct connection_t {
     char* outFIFOPath;
@@ -122,14 +123,17 @@ Connection conn_open(const char* address) {
     }
     //Else, FIFO is open and with data
     char *ack;
-    conn_receive(connection, (void **)&ack, NULL);
+    if(conn_receive(connection, (void **)&ack, NULL) == 0) {
+        printf("conn_receive failed. Aborting.\n");
+        return NULL;
+    }
     //Step 6
     if(strcmp(ack, MESSAGE_OK) == 0) {	//Server forked and listening, open write FIFO again
     	connection->outFD = open(connection->outFIFOPath, O_WRONLY);
     	return connection;
     }
     else {
-    	printf("Error, received something else: %s\n", ack);
+    	printf("Error, received something else: %s\nAborting.\n", ack);
     	return NULL;
     }
 }
@@ -180,11 +184,11 @@ ConnectionParams conn_listen(char *listeningAddress) {
         return NULL;
     }
     ConnectionParams p = malloc(sizeof(*p));
-    int fd = open(listeningAddress, O_RDWR);/*O_RDONLY|O_NONBLOCK);           // Open in non-blocking read mode to prevent blocking, but remove flag immediately after
+    int fd = open(listeningAddress, O_RDONLY|O_NONBLOCK);           // Open in non-blocking read mode to prevent blocking, but remove flag immediately after
     if(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL)&~O_NONBLOCK) == -1) {  // Remove nonblocking flag, we want reads to be blocking later
         printf("Couldn't open requests file in non-blocking mode for process #%i\n", getpid());
         return NULL;
-    }*/
+    }
     p->connRequestsFD = fd;
     return p;
 }
@@ -233,14 +237,23 @@ Connection conn_accept(ConnectionParams params) {
 
 static int createProcessFIFOs(const char* basePath, Connection c) {
     int baseLength = strlen(basePath);
-    if((c->outFIFOPath = malloc(baseLength+4+1)) == NULL)   //path+"-out"+\0
+    //Make out FIFO
+    if((c->outFIFOPath = malloc(baseLength+4+1)) == NULL) { //path+"-out"+\0
         return 0;
-    if((c->inFIFOPath = malloc(baseLength+3+1)) == NULL)    //path+"-in"+\0
-        return 0;
+    }
     sprintf(c->outFIFOPath, "%s-out", basePath);
-    sprintf(c->inFIFOPath, "%s-in", basePath);
-    if(mkfifo(c->outFIFOPath, 0666) == -1 || mkfifo(c->inFIFOPath, 0666) == -1) {	//0666 == anybody can read and write TODO change?
+    if(mkfifo(c->outFIFOPath, 0666) == -1) {	//0666 == anybody can read and write TODO change?
+        //If this fails, it might be because there are leftover FIFOs that weren't erased and the file already exists
         free(c->outFIFOPath);
+        return 0;
+    }
+    //Make in FIFO
+    if((c->inFIFOPath = malloc(baseLength+3+1)) == NULL) {  //path+"-in"+\0
+        return 0;
+    }
+    sprintf(c->inFIFOPath, "%s-in", basePath);
+    if(mkfifo(c->inFIFOPath, 0666) == -1) {	//0666 == anybody can read and write TODO change?
+        //If this fails, it might be because there are leftover FIFOs that weren't erased and the file already exists
         free(c->inFIFOPath);
         return 0;
     }
@@ -249,6 +262,10 @@ static int createProcessFIFOs(const char* basePath, Connection c) {
 
 static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
     int fd = open(mainServerFIFO, O_WRONLY);    //This will block if the main server isn't reading at the address
+    int lock = flock(fd, LOCK_EX);
+    if(lock != 0) { //Couldn't obtain lock for some bizarre reason
+        return 0;
+    }
     size_t len = strlen(c->outFIFOPath)+1;
     if(!ensureWrite(&len, sizeof(len), fd) || !ensureWrite(c->outFIFOPath, len, fd)) {
         close(fd);  //TODO should this be here? And below, too
@@ -259,6 +276,7 @@ static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
         close(fd);
         return 0;
     }
+    flock(fd, LOCK_UN);
     close(fd);
     return 1;
 }
