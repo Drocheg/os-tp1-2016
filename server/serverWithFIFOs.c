@@ -38,7 +38,6 @@ int main(int argc, char **argv) {
             continue;
         }
         int fds_toclose[2] = {c->inFD, c->outFD};
-//        printf("client connected.\n");
         if (!fork()) { //Child
             isParentServer = 0;
             //Don't need main server FIFO anymore

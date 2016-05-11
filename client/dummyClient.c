@@ -11,7 +11,7 @@
 #include <comm.h>
 
 int main(int argc, char** argv) {
-    //TODO doesn't work, make it werk!
+    //TODO doesn't work for more than 1 client, make it werk!
     char *addr = getServerAddress();
     int pid = getpid();
     printf("Dummy client #%i connecting...", pid);
