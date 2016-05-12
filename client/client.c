@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
                 //No sale, sale con el 0. Esto es para confirmar compra. ???
                 break;
             default:
-                if(option > 0 && option-2 <= numProducts) { //Because there are N products and 0 is exit. The products are the entries from 1 to N.
+                if(option > 0 && option-2 < numProducts) { //Because there are N products and 0 is exit. The products are the entries from 1 to N.
                     startPurchase(option-2, products, order); //Entrar en la etapa de comprar. Se pasa opcion-2 porque ese es el indice en el array.
                 }
                 else{
