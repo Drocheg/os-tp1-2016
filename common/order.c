@@ -53,11 +53,11 @@ int addToOrder(Order order, int product_id, int quantity){
 }
 
 
-int serializeOrder(const Order o, void **dest) {
+size_t serializeOrder(const Order o, void **dest) {
     //TODO check for errors and return NULL
     int offset = 0;
     int addressLen = strlen(o->address)+1;
-    int totalLen = sizeof(addressLen) + addressLen + sizeof(o->numEntries) + sizeof(o->items);
+    size_t totalLen = sizeof(addressLen) + addressLen + sizeof(o->numEntries) + sizeof(o->items);
     *dest = malloc(totalLen);
     memcpy(*dest, &addressLen, sizeof(addressLen));
     offset += sizeof(addressLen);
@@ -66,7 +66,7 @@ int serializeOrder(const Order o, void **dest) {
     memcpy(*dest+offset, &(o->numEntries), sizeof(o->numEntries));
     offset += sizeof(o->numEntries);
     memcpy(*dest+offset, &(o->items), sizeof(o->items));
-    return 1;
+    return totalLen;
 }
 
 Order unserializeOrder(const void* data) {

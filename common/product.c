@@ -36,12 +36,12 @@ void prettyPrintProduct(Product p) {
 }
 
 
-int serializeProduct(const Product p, void **dest) {
+size_t serializeProduct(const Product p, void **dest) {
     //TODO check for errors and return NULL
     int offset = 0;
     int nameLen = strlen(p->name)+1;
     int descrLen = strlen(p->description)+1;
-    int totalLen = sizeof(nameLen) + nameLen + sizeof(descrLen) + descrLen + sizeof(p->price) + sizeof(p->stock);
+    size_t totalLen = sizeof(nameLen) + nameLen + sizeof(descrLen) + descrLen + sizeof(p->price) + sizeof(p->stock);
     *dest = malloc(totalLen);
     memcpy(*dest, &nameLen, sizeof(nameLen));
     offset += sizeof(nameLen);
@@ -54,7 +54,7 @@ int serializeProduct(const Product p, void **dest) {
     memcpy(*dest+offset, &(p->price), sizeof(p->price));
     offset += sizeof(p->price);
     memcpy(*dest+offset, &(p->stock), sizeof(p->stock));
-    return 1;
+    return totalLen;
 }
 
 Product unserializeProduct(const void* data) {

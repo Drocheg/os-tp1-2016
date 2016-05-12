@@ -8,6 +8,8 @@
 #ifndef PRODUCT_H
 #define PRODUCT_H
 
+#include <stddef.h>
+
 typedef struct product_t* Product;
 
 Product newProduct(const char *name, const char *description, const float price, const int stock);
@@ -16,7 +18,7 @@ void freeProduct(Product p);
 
 void prettyPrintProduct(Product p);
 
-int serializeProduct(const Product p, void **dest);
+size_t serializeProduct(const Product p, void **dest);
 
 Product unserializeProduct(const void* data);
 
