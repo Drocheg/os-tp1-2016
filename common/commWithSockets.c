@@ -172,7 +172,6 @@ static char* getIPRegEx() {
 
 	char *expr1 = "^((0|[3-9][0-9]?|1[0-9]?[0-9]?|25[0-5]|2[0-4]?[0-9]?|2[0-9])\\.)";
     char *expr2 = "{1,3}(0|[3-9][0-9]?|1[0-9]?[0-9]?|25[0-5]|2[0-4]?[0-9]?|2[0-9])$";
-    char *expr3 = ":(0|[1-9][0-9]{1,4})$";
     size_t len1 = strlen(expr1);
     size_t len2 = strlen(expr2);
     size_t totalLength = len1 + len2;
