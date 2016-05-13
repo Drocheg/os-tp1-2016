@@ -1,258 +1,329 @@
-#include "commWithSockets.h"
-#include "config.h"
-#include <lib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include "comm.h"
 #include <stdlib.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <regex.h> 
-#include <stdio.h>
-
-#ifndef ATTEMPTS
-#define ATTEMPTS 10
-#endif
-
-#ifndef BLOCK
-#define BLOCK 1024
-#endif
 
 
-#ifndef MAIN_SERVER_CONNECTION
-#define MAIN_SERVER_CONNECTION 1
-#endif
+struct connection_t {
+	char *ip;
+	in_port_t port;
+	int socketfd;
 
-#ifndef FORKED_SERVER_CONNECTION
-#define FORKED_SERVER_CONNECTION 2
-#endif
+};
 
-#ifndef CLIENT_CONNECTION
-#define CLIENT_CONNECTION 3
-#endif
 
-/*
- * Gets the IP part from the address string, assuming the ddd.ddd.ddd.ddd:ppppp 
- * format, where ddd is a decimal number between 0 and 255, and ppppp is a decimal
- * number from 0 to 65535
- * Returns the IP address or NULL if there isn't a match with specific format
- */
-static char* getIP(const char * address) {
+/* Connecting functions wrappers */
+static int inet_pton_wrp(int af, const char* src, void* dst);
+static int socket_wrp(int domain, int type, int protocol);
+static int connect_wrp(int socket, const struct sockaddr* address, socklen_t address_len);
+static int bind_wrp(int socket, const struct sockaddr* address, socklen_t address_len);
+static int listen_wrp(int socket, int backlog);
+static int shutdown_wrp(int socket, int how);
 
-	char * aux = NULL;
-	int i = 0, flag = 0;
-	
-	while (address[i] != ':' && i < 16 && (flag = !(address[i] != 0))) {
-		i++;
-	} 
-	if (i < 16 && !flag) {
-		aux = malloc(i + 1);
-		memcpy(aux, (void*)address, i);
-		aux[i + 1] = 0;
-	}
-	
-	return aux;
-}
+/* Auxiliar functions */
+static int searchForColon(const char *address);
+static char* getIPRegEx();
+static char* getPortRegEx();
+static int checkIP(const char *ip);
+static int checkPort(const char *portStr);
+static int isValidAddress(const char *address);
+static int initialize(Connection connection, const char *address);
+static int createTCPSocket(Connection connection);
+
+
+
+
+/*****************/
+/* API Functions */
+/*****************/
 
 /*
- * Gets the port number from the address string (format: ddd.ddd.ddd.ddd:ppppp)
- * Assumes address is NULL-terminated
+ * Opens a connection with the specified address. Another process should have
+ * called <i>conn_open</i> with the same address for the connection to establish. 
+ *
+ * @param const char *address A formatted address where to listen to requests.
+ * @return Connection The connection on success, or NULL on error.
  */
+Connection conn_open(const char* address) {
 
+	Connection connection;
+	int result;
 
-static in_port_t getPortFromAddress(const char* address) {
+	if (!isValidAddress(address)) {
+		return NULL;
+	}
 
-	int i = 0;
-	while (address[i++] != ':')
-		;
-    address += i;
-    return (in_port_t)atoi((address));
+	connection = malloc(sizeof(*connection));
+	if (connection == NULL) {
+		return NULL;
+	}
+
+	return (initialize(connection, address) == -1) ? NULL : connection;
+
 }
 
-static in_port_t getPortFromCSV(const char* address) {
+/*
+ * Sends MESSAGE_CLOSE to the other endpoint of this connection and frees up the
+ * resources used by this process to maintain the specified connection.
+ *
+ * @return int 1 on success, 0 on error.
+ * @see MESSAGE_CLOSE
+ */
+int conn_close(Connection connection) {
 
-	char * port;
+
+
+
+}
+
+/*
+ * Sends the specified message to the other endpoint of the specified connection.
+ * To expect a response, call <i>conn_receive</i> afterwards.
+ *
+ * @param const Connection c The connection through which to send data.
+ * @param const void* data The data to send.
+ * @param const size_t length The length (in bytes) of the data to send. This is
+ * sent before sending the data, so the receiving end knows how many bytes to
+ * read.
+ * @return int 1 on success, 0 on error.
+ */
+int conn_send(const Connection connection, const void* data, const size_t length) {
+
+
+
+
+}
+
+/*
+ * Reads data from the specified connection.
+ *
+ * @param const Connection c The connection from which to read data.
+ * @param void** data Where to store the received data.
+ * @param size_t* length Where to store the length of the received data. Can be
+ * NULL if this is not needed (e.g. if the length of the data to receive is
+ * known)
+ * This is read first, in order to allocate just enough memory for the received
+ * data.
+ * @return int 1 on success, 0 on error.
+ */
+int conn_receive(const Connection conn, void** data, size_t* length) {
+
+
+
+
+}
+
+/**
+ * Sets up the current process to listen for connections at the specified
+ * address.
+ *
+ * @param char* listeningAddress Where the process should listen for connections.
+ * For connections to go through, a different process should call <i>conn_open()</i>
+ * specifying the same address.
+ * @return ConnectionParams A structure of connection parameters needed for the
+ * process to actually start accepting connections.
+*/
+ConnectionParams conn_listen(char *listeningAddress) {
+
+
+
+
+
+}
+
+/**
+ * Waits until there's an available connection, and returns it when it's ready.
+ * 
+ * @param ConnectionParams params Parameters for listening to connection requests.
+ * Dependent on the communication method used.
+ * @return Connection An established connection, ready to receive and send data,
+ * or NULL on error.
+*/
+Connection conn_accept(ConnectionParams params) {
+
+
+
+
+
+
+}
+
+
+/**********************/
+/* Auxiliar functions */
+/**********************/
+
+/*
+ * Searches for a colon (':') in the address
+ * Returns the position in which the colon was found, or -1 if not found
+ */
+static int searchForColon(const char *address) {
+
 	int i = 0;
-	while(address[i] != ',') {
+	while (address[i] != 0 && address[i] != ':') {
 		i++;
-	} 
-	port = malloc(i - 1);
-	memcpy(port, address + 2, i - 1);
-	port[i] = 0;
-	return (in_port_t)atoi(port);
+	}
+	return (address[i] == 0) ? -1 : i;
 }
 
-static in_port_t getPort(const char* address) {
+/*
+ * Returns a string with the ip regex
+ * Allocates memory
+ */
+static char* getIPRegEx() {
 
-	if(address[0] == 'p') {
-		return getPortFromCSV(address); /* This means that the address string is a csv (forked servers) */
-	}
-
-	if (strlen(address) < 6) {
-		return atoi(address); /* This means that the address string has only the port number */
-	}
-	return getPortFromAddress(address);
-
-}
-
-
-static int getFDFromCSV(const char* address) {
-	
-	int i = 0;
-	while(address[i] != ',' && address[i] != 0) {
-		i++;
-	}
-	if (address[i] == 0) {
-		return -1;
-	}
-	return atoi(address + i + 3);
-}
-
-
-
-static int isPort(const char* address) {
-
-	int port;
-    regex_t regex;
-    regcomp(&regex, "^(0|[1-9][0-9]{1,4})$", REG_EXTENDED);
-    if (regexec(&regex, address, 0, NULL, 0)) {
-        return 0;
+	char *expr1 = "^((0|[3-9][0-9]?|1[0-9]?[0-9]?|25[0-5]|2[0-4]?[0-9]?|2[0-9])\\.)";
+    char *expr2 = "{1,3}(0|[3-9][0-9]?|1[0-9]?[0-9]?|25[0-5]|2[0-4]?[0-9]?|2[0-9])$";
+    char *expr3 = ":(0|[1-9][0-9]{1,4})$";
+    size_t len1 = strlen(expr1);
+    size_t len2 = strlen(expr2);
+    size_t totalLength = len1 + len2;
+    
+    char *expr = calloc(1, (totalLength + 1) * sizeof(char));
+    if (expr == NULL) {
+    	return NULL;
     }
+    memcpy(expr, expr1, len1 * sizeof(char));
+    memcpy(expr + len1, expr2, len2 * sizeof(char));
 
-	port = atoi(address);
-	if (port < 0 || port > 65535) {
-		return 0;
-	}
-	return 1;
+    return expr;
+}
+
+/*
+ * Returns a string with the port regex
+ */
+static char* getPortRegEx() {
+
+	return "^(0|[1-9][0-9]{1,4})$";
 }
 
 
-static int isIP(const char* address) {
+/*
+ * Checks if an ip address is valid (just the address part, not the port)
+ * Returns 1 if it was a valid ip, or 0 otherwise
+ * Returns -1 if an error ocurred (i.e. memory couldn't be allocated for the regex)
+ */
+static int checkIP(const char *ip) {
 
 	regex_t regex;
-	char * expr = "^((0|[3-9][0-9]?|1[0-9]?[0-9]?|25[0-5]|2[0-4]?[0-9]?|2[0-9])\\.){1,3}(0|[3-9][0-9]?|1[0-9]?[0-9]?|25[0-5]|2[0-4]?[0-9]?|2[0-9])$";
-    regcomp(&regex, expr, REG_EXTENDED);
-    
-    return regexec(&regex, address, 0, NULL, 0);
-}
+	char *expr = getAddressRegEx();
+	int result = 0;
 
-
-static int isIPAndPort(const char* address) {
-
-	int i = 0;
-	char* ip;
-	char* port;
-	while(address[i] != ':' && i < 15) {
-		i++;
-	}
-	if (address[i] != ':') {
-		return 0;
-	}
-	ip = malloc(i);
-	memcpy(ip, address, i);
-	ip[i] = 0;
-	if (!isIP(ip)) {
-		return 0;
+	if (expr == NULL) {
+		return -1;
 	}
 
-	port = (char*)((void*)address + i + 1);
-	if (!isPort(port)) {
-		return 0;
-	}
-	return 1;
-
-}
-
-
-
-
-
-static int isForkedServerAddressType(const char* address) {
-
-	int i = 0, port;
-	char* aux;
-
-	while (address[i] != ',' && address[i] != 0) {
-		i++;
-	}
-	if (address[i] == 0) {
-		return 0;
-	}
-
-	aux = malloc(i);
-	aux = strncpy(aux, address, i);
-    regex_t regex;
-    char* expr = "^p=(0|[1-9][0-9]{1,4})$";
-    regcomp(&regex, expr, REG_EXTENDED);
-    if (regexec(&regex, aux, 0, NULL, 0)) {
-        return 0;
-    }
-	port = atoi( (char*)(void*)address + 2);
-	if (port < 0 || port > 65535) {
-		return 0;
-	}
-
-	expr = "^f=(0|[1-9][0-9]*)$";
 	regcomp(&regex, expr, REG_EXTENDED);
-	return !regexec(&regex, (char*)((void*)address + i + 1) , 0, NULL, 0);
+	result = !regexec(&regex, ip, 0, NULL, 0); /*Returns 0 if success, or a non-zero code if not match */
+	free(expr); /* Must free because getAddressRegex function allocates memory */
+	return result;
 
 }
-
 
 /*
- * Address type can be one of the following formats:
- * 		ddd.ddd.ddd.ddd:ppppp	This is a normal IP Address and the port number (clients start connections with them)
- *		ppppp					Only port number (for main server connection)
- * 		p=ppppp, f=fffff		Port and file descriptor through which a forked server can communicate (for forked servers)
- * 
- * Main servers create a connection within themselves
+ * Checks if a port is valid
+ * Returns 1 if it was a valid port, or 0 otherwise
  */
-static int checkAddressType(const char* address) {
+static int checkPort(const char *portStr) {
 
-	if (isPort(address)) {
-		return MAIN_SERVER_CONNECTION;
+	regex_t regex;
+	char *expr = getPortRegEx();
+	int result = 0;
+	unsigned short port;
+	regcomp(&regex, expr, REG_EXTENDED);
+	result = regexec(&regex, portStr, 0, NULL, 0); /* Returns 0 if success, or a non-zero code if not match */
+	
+	if (result) {
+		return 0; /* Port doesn't match with specified format */
+	}
+	port = atoi(portStr);
+	if (port > 65535) { /* Just check upper limit because a negative number wouldn't have passsed the regex test */
+		return 0; /* Port out of range*/
+	}
+	return 1;
+}
+
+/*
+ * Checks that the address is valid
+ * An address is valid if it has the following format: ddd.ddd.ddd.ddd:ppppp
+ * Returns 1 if it was a valid address, or 0 otherwise
+ * Returns -1 in case of error (i.e. memory couldn't be allocated for a regex)
+ */
+static int isValidAddress(const char *address) {
+
+	int colonPosition = searchForColon(address);
+	char *ipPart;
+	char *portPart;
+	int portPartLength = strlen(address) - colonPosition - 1;
+	int flag1 = 0, flag2 = 0;
+
+	if (colonPosition < 0) {
+		return 0; /* Invalid IP Address. Colon is missing */
 	}
 
-	if(isForkedServerAddressType(address)) {
-		return FORKED_SERVER_CONNECTION;
+	ipPart = calloc(1, (colonPosition + 1) * sizeof(char));
+	portPart = calloc(1, (portPartLength + 1) * sizeof(char));
+	memcpy(ipPart, address, colonPosition * sizeeof(char));
+	memcpy(portPart, address + colonPosition + 1, portPartLength * sizeof(char));
+
+	flag1 = checkIP(ipPart);
+	flag2 = checkPort(portPart);
+
+	if (flag1 == -1) {
+		return -1;
 	}
-	if(isIPAndPort(address)) {
-		return CLIENT_CONNECTION;
+
+	return flag1 && flag2;
+}
+
+/*
+ * Creates the TCP Socket
+ */
+static int createTCPSocket(Connection connection) {
+
+	struct sockaddr_in serverAddress;
+
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_port = htons(connection->port);
+
+	if (inet_pton_wrp(AF_INET, connection->ip, &serverAddress.sin_addr)) {
+		return -1;
 	}
+	if ((connection->socketfd = socket_wrp(PF_INET, SOCK_STREAM, 0)) < 0) {
+    	return -1;
+	}
+	if (connect_wrp(connection->socketfd, (struct sockaddr*)&serverAddress, sizeof(serverAddress))) {
+    	return -1;
+	}	
 	return 0;
 }
 
+/*
+ * Initializes a connections
+ * Returns 0 on sucess, or -1 otherwise
+ */
+static int initialize(Connection connection, const char *address) {
+
+	int colonPosition = searchForColon();
+	connection->ip = calloc(1, (colonPosition + 1) * sizeof(char));
+
+	if (connection->ip == NULL) {
+		return -1;
+	}
+	memcpy(connection->ip, address, colonPosition * sizeof(char));
+	connection->port = (in_port_t)atoi((char *)(((void *)address) + colonPosition + 1))
+
+	return createTCPSocket(connection);
+
+}
 
 
+/*********************************/
+/* Connecting functions wrappers */
+/*********************************/
+/* Connecting functions wrappers */
+static int inet_pton_wrp(int af, const char* src, void* dst) {
 
-
-
-
-// Connection client_conn_open(const char* address) {
-
-// 	Connection connection = malloc(sizeof(*connection));
-// 	struct sockaddr_in serverAddress;
-
-// 	connection->ip = getIP(address);
-// 	connection->port = getPort(address);
-// 	connection->socketfd = socket(PF_INET, SOCK_STREAM, 0);
-
-// 	serverAddress.sin_family = AF_INET;
-// 	serverAddress.sin_port = htons((in_port_t)connection->port);
-// 	inet_pton(AF_INET, connection->ip, &serverAddress.sin_addr);
-// 	connect(connection->socketfd, (struct sockaddr*)&serverAddress, sizeof(serverAddress));
-
-
-// 	return connection;
-
-// }
-
-
-
-/* Connectinf functions wrappers */
-static int inet_pton_wrp(int af, const char* restrict src, void* restrict dst) {
-
-	int result = inet_pton(af, src, dst)
+	printf("%s\n", src);
+	int result = inet_pton(af, src, dst);
 	if (result == 0) {
 		fprintf(stderr, "Invalid IP address\n");
 		return -1;
@@ -284,7 +355,7 @@ static int connect_wrp(int socket, const struct sockaddr* address, socklen_t add
 
 static int bind_wrp(int socket, const struct sockaddr* address, socklen_t address_len) {
 
-	if (bind(socket, address, address_len) {
+	if (bind(socket, address, address_len)) {
     	fprintf(stderr, "Couldn't bind socket\n");
     	return -1;
     }
@@ -310,196 +381,8 @@ static int shutdown_wrp(int socket, int how) {
 }
 
 
-static Connection client_conn_open(Connection connection) {
-
-	struct sockaddr_in serverAddress;
-
-	serverAddress.sin_family = AF_INET;
-	serverAddress.sin_port = htons(connection->port);
-
-	if (inet_pton_wrp(AF_INET, connection->ip, &serverAddress.sin_addr)) {
-		return NULL;
-	}
-	if ((connection->socketfd = socket_wrp(PF_INET, SOCK_STREAM, 0)) < 0) {
-    	return NULL;
-	}
-	if (connect_wrp(connection->socketfd, (struct sockaddr*)&serverAddress, sizeof(serverAddress))) {
-    	return NULL;
-	}	
-	return connection;
-
-	/*
-	if (inet_pton(AF_INET, connection->ip, &serverAddress.sin_addr) != 1) {
-		fprintf(stderr, "Invalid IP address\n");
-    	return NULL;
-
-	}
-	if ((connection->socketfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-		fprintf(stderr, "Couldn't create socket\n");
-    	return NULL;
-	}
-	if (connect(connection->socketfd, (struct sockaddr*)&serverAddress, sizeof(serverAddress))) {
-		fprintf(stderr, "Couldn't create connection\n");
-    	return NULL;
-	} */
-	
-
-}
-
-static Connection forked_server_conn_open(in_port_t port, int fd) {
-
-	Connection connection = malloc(sizeof(*connection));
-	
-	connection->ip = NULL;
-	connection->port = port;
-	connection->socketfd = fd;
-
-	return connection;
-
-}
-
-
-static void listen_loop(Connection connection) {
-
-	printf("Now listening on port %hu", connection->port);
-	while(1) {
-    	int new_fd = accept(connection->socketfd, NULL, NULL);
-    	if (fork() == 0) {
-    		/* New process created, and forkedServer function is called */
-    		Connection forked = forked_server_conn_open(connection->port, new_fd)
-			int result forkedServer(forked);	//FIXME move elsewhere include was removed and won compile, forking shouldn't be done here
-			conn_close(forked);
-			exit(result); /* Finishes execution of forked server process */
-		}
-    }
-}
-
-static sockaddr_in main_server_setup(Connection connection) {
-
-	struct sockaddr_in mainServer;
-
-	mainServer.sin_family = AF_INET;
-    mainServer.sin_addr.s_addr = htonl(INADDR_ANY); /* Enables connection through all present interfaces */
-    mainServer.sin_port = htons(connection->port);
-
-    return mainServer;
-
-}
-
-static Connection main_server_conn(Connection connection) {
-
-	struct sockaddr_in mainServer = main_server_setup(connection);
-
-    if ((connection->socketfd = socket_wrp(PF_INET, SOCK_STREAM, 0)) < 0) {
-    	return NULL;
-	}
-	if (bind_wrp(connection->socketfd, (struct sockaddr*)&mainServer, sizeof(mainServer))) {
-    	return NULL;
-    }
-    if (listen_wrp(connection->socketfd, 10)) {
-   		return NULL;
-   	}
-   	listen_loop(connection);
-
-   	return connection;
-
-
-
-   	/*
-   	struct sockaddr_in mainServer;
-
-   	
-	mainServer.sin_family = AF_INET;
-    mainServer.sin_addr.s_addr = htonl(INADDR_ANY); // Enables connection through all present interfaces
-    mainServer.sin_port = htons(connection->port);
-
-	if ((connection->socketfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
-		fprintf(stderr, "Couldn't create socket\n");
-    	return NULL;
-	}
-
-	if (bind(connection->socketfd,
-			(struct sockaddr*)&mainServer,
-			sizeof(mainServer))) {
-    	fprintf(stderr, "Couldn't bind socket\n");
-    	return NULL;
-    }
-
-    if (listen(connection->socketfd, 10)) {
-   		fprintf(stderr, "Can't listen through socket\n");
-   		return NULL;
-   	} 
-
-   	printf("Now listening on port %hu", connection->port);
-   	while(1) {
-    	int new_fd = accept(connection->socketfd, NULL, NULL);
-    	if (fork() > 0) {
-    		// New process created, and forkedServer function called
-			exit(forkedServer(forked_server_conn_open(connection->port, new_fd)));
-		}
- 
-    }*/
-}
 
 
 
 
-Connection conn_open(const char* address) {
 
-	int connectionType = checkAddressType(address);
-	Connection connection;
-	
-	if (!connectionType) {
-		return NULL; /* No matching pattern for address */
-	}
-
-	connection = malloc(sizeof(*connection));
-	connection->ip = getIP(address);
-	connection->port = getPort(address);
-
-	switch(connectionType) {
-		case MAIN_SERVER_CONNECTION: { 
-			return main_server_conn(connection);
-		}
-		case FORKED_SERVER_CONNECTION: { 
-			return forked_server_conn_open(connection->port, getFDFromCSV(address));
-		}	
-		case CLIENT_CONNECTION: {
-			return client_conn_open(connection);
-		}
-	}
-	return NULL;
-
-
-}
-
-
-int conn_close(Connection connection) {
-
-	conn_send(connection, CLOSE_MESSAGE, sizeof(CLOSE_MESSAGE));
-	if (shutdown_wrp(connection->socketfd, SHUT_RDWR)) {
-   		return -1; 
-	}
-	free(connection);
-	return 0;
-}
-
-
-int conn_send(const Connection connection, const void* data, const size_t length) {
-	int i = 0;
-	write(connection->socketfd, &length, sizeof(size_t));
-	while (i++ < ATTEMPTS) {
-		if (!(length - write(connection->socketfd, data, length))) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
-
-int conn_receive(const Connection connection, char** data, size_t* length) {
-	ensureRead(length, sizeof(*length), connection->socketfd);
-	*data = malloc(*length);
-	ensureRead(*data, *length, connection->socketfd);
-	return 1;
-}
