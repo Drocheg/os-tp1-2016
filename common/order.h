@@ -25,7 +25,7 @@ int order_get_num_entries();
 
 void order_set_addr(Order order, char * address);
 
-int order_add(Order order, int product_id, int quantity);
+int order_add(Order order, int product_id, int quantity, int price);
 
 void order_print(Order order);
 

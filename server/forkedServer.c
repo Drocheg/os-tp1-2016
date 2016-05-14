@@ -13,7 +13,7 @@
 
 typedef int DbConnection; //TODO hacer esto bien
 
-Product getProdcuts(DbConnection dbConnection);
+Product getProducts(DbConnection dbConnection);
 int getNumProducts(DbConnection dbConnection);
 int checkStockAndChange(Order order, DbConnection dbConnection);
 
@@ -56,10 +56,11 @@ void sendProducts(Connection c, DbConnection dbConnection){
 
     
     Product product;
-    product = getProdcuts(dbConnection); //TODO pedir productos a la base de datos
+    product = getProducts(dbConnection); //TODO pedir productos a la base de datos
    
     Product * products;
-    products = &product;
+    products = &product; 
+    //Estas lineas de arriba son para testing. Deberia ser nada mas getProducts() y asignarlo a 1 variable.
 
     int responseCode = 1;
     conn_send(c, &responseCode, sizeof(responseCode));
@@ -108,7 +109,7 @@ void endConnection(Connection c, DbConnection dbConnection){
     //TODO?
 }
  
-Product getProdcuts(DbConnection dbConnection){
+Product getProducts(DbConnection dbConnection){
     printf("Devuelve los productos\n");
     return newProduct("Vodka", "vodkaaa", 22, 2);
 }
