@@ -1,3 +1,9 @@
+#include "forkedServer.h"
+#include <config.h>
+#include <product.h>
+#include <order.h>
+#include <lib.h>
+#include <logging.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -6,117 +12,121 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "product.h"
-#include "comm.h"
-#include "config.h"
-#include "order.h"
 
-typedef int DbConnection; //TODO hacer esto bien
+int getProdcuts(Product **destArray);
 
-Product getProdcuts(DbConnection dbConnection);
-int getNumProducts(DbConnection dbConnection);
-int checkStockAndChange(Order order, DbConnection dbConnection);
+void sendProducts(Connection c);
 
-void forkedServer(Connection c, DbConnection dbConnection);
-void sendProducts(Connection c, DbConnection dbConnection);
-void receiveOrder(Connection c, DbConnection dbConnection);
-void endConnection(Connection c, DbConnection dbConnection);
+void processOrder(Connection c);
 
-void forkedServer(Connection c, DbConnection dbConnection){ //RequestProd 1 y  finish 2
+static void shut_down(Connection c);
 
-	//De donde saco la base de datos?
-	int done = 0;
-	do{
-		void * clienteData;
-    	size_t msgLength;
-    	conn_receive(c, &clienteData, &msgLength); //Al pedo msg lenght en este caso siempre int ?? O verificar que sea sizeOf int????
-    	printf("msgLength : %d\n", msgLength);
-        int msgCode = *((int*)clienteData);
+void forkedServer(Connection c) { //RequestProd 1 y  finish 2
+    //De donde saco la base de datos?
+    int done = 0;
+    do {
+        void* clientData;
+        conn_receive(c, &clientData, NULL);
+        int msgCode = *((int*) clientData);
+        free(clientData);
         printf("msgCode : %d\n", msgCode);
-    	switch(msgCode){//Rodrigo prefiere siempre cosas bien, paja
-    		case 1:
-    			sendProducts(c, dbConnection);
-    			break;
-    		case 2:	
-    			receiveOrder(c, dbConnection);
-    			break;
-    		case 3:
-    			endConnection(c, dbConnection);
+        switch (msgCode) {      //TODO use function array?
+            case CMD_GET_PRODUCTS:
+                sendProducts(c);
+                break;
+            case CMD_PLACE_ORDER:
+                processOrder(c);
+                break;
+            case MESSAGE_CLOSE:
+                shut_down(c);
                 done = 1;
-    			break;
-    		default:
-    			printf("WAT\n");
-    			break;
-    	}   
-	}while(!done);
+                break;
+            default:
+                log_warn("Forked server received unknown message code. Behavior might be wacky from now on.");
+                break;
+        }
+    } while (!done);
+    exit(0);
 }
 
-
-void sendProducts(Connection c, DbConnection dbConnection){
-
-    
-    Product product;
-    product = getProdcuts(dbConnection); //TODO pedir productos a la base de datos
-   
+void sendProducts(Connection c) {
     Product * products;
-    products = &product;
-
-    int responseCode = 1;
-    conn_send(c, &responseCode, sizeof(responseCode));
-
-
-    int numProducts = getNumProducts(dbConnection);  //TODO pedir la cantidad de productos a la base de datos (Que sea correspondiente a los productos, sin cambios en el medio)
-    conn_send(c, &numProducts,sizeof(numProducts));
-
-
-    void * serializedProduct;
-    size_t serializedProductSize;
-
-    for(int i = 0; i<numProducts; i++){
-        serializedProductSize=serializeProduct(products[i], &serializedProduct);
-        printf("El tamaño del producto serializado: %d\n", serializedProductSize);
-        conn_send(c,serializedProduct,serializedProductSize);
-    } 
-    
-    printf("Ponele que te los mando\n");
-
-}
-
-void receiveOrder(Connection c, DbConnection dbConnection){
-
-    
-    void * serializedOrder;
-    size_t serializedOrderSize;
-    conn_receive(c, &serializedOrder, &serializedOrderSize);
-    Order order = unserializeOrder(serializedOrder);
-
-    int stockCheck = checkStockAndChange(order,dbConnection);//Se tiene que tener cuidado de que nadie aceda a la base de datos entre el check y el change
-    if(stockCheck<0){ 
-        printf("No hay stock\n");
-        return; 
+    int numProducts = getProdcuts(&products);
+    int responseCode;
+    if(numProducts == -1) {
+        responseCode = MESSAGE_ERROR;
+        conn_send(c, &responseCode, sizeof (responseCode));
     }
-    printf("Compra satisfactoria");
+    //Send product count
+    conn_send(c, &numProducts, sizeof (numProducts));
+    //Send each product
+    for (int i = 0; i < numProducts; i++) {
+        void *serialized;
+        size_t serializedLen;
+        serializedLen = serializeProduct(products[i], &serialized);
+        conn_send(c, serialized, serializedLen);
+        free(serialized);
+    }
+}
 
-    int responseCode = 1;
-    conn_send(c, &responseCode, sizeof(responseCode));
+void processOrder(Connection c) {
+    //Read order
+    void* serialized;
+    size_t serializedLen;
+    conn_receive(c, &serialized, &serializedLen);
+    //No need to serialize order
     
-    printf("Ponele que funciona\n");
+    //Place order and parse response
+    sh_conn_open(dbConn);
+    int code = CMD_PLACE_ORDER,
+        outFD = sh_conn_get_out_fd(dbConn),
+        inFD = sh_conn_get_in_fd(dbConn);
+    ensureWrite(&code, sizeof(code), outFD);
+    ensureWrite(&serializedLen, sizeof(serializedLen), outFD);
+    ensureWrite(serialized, serializedLen, outFD);
+    free(serialized);
+    //Wait for response...
+    ensureRead(&code, sizeof(code), inFD);
+    //Send back response code
+    conn_send(c, &code, sizeof(code));
+    //If needed, send back extra data
+    if(code == MESSAGE_UNSATISFIABLE_ORDER) {
+        //Read new serialized order
+            ensureRead(&serializedLen, sizeof(serializedLen), inFD);
+            serialized = malloc(serializedLen);
+            ensureRead(serialized, serializedLen, inFD);
+            //Send it back
+            conn_send(c, &code, sizeof(code));
+            conn_send(c, serialized, serializedLen);
+    }
+    sh_conn_close(dbConn);
 }
 
-
-void endConnection(Connection c, DbConnection dbConnection){
-    //TODO?
-}
- 
-Product getProdcuts(DbConnection dbConnection){
-    printf("Devuelve los productos\n");
-    return newProduct("Vodka", "vodkaaa", 22, 2);
+void shut_down(Connection c) {
+    conn_close(c);
 }
 
-int getNumProducts(DbConnection dbConnection){
-    return 1;
-}
-
-int checkStockAndChange(Order order, DbConnection dbConnection){
-    return 1;
+int getProdcuts(Product **destArray) {
+    int outFD = sh_conn_get_out_fd(dbConn),
+        inFD = sh_conn_get_in_fd(dbConn);
+    sh_conn_open(dbConn);
+    //Request products
+    int code = CMD_GET_PRODUCTS;
+    if(!ensureWrite(&code, sizeof(code), outFD)) {
+        return -1;
+    }
+    if(!ensureRead(&code, sizeof(code), inFD) || code == MESSAGE_ERROR) {
+        return -1;
+    }
+    //Code contains the number of products returned.
+    *destArray = malloc(sizeof(**destArray)*code);
+    for(int i = 0; i < code; i++) {
+        size_t serializedLen;
+        ensureRead(&serializedLen, sizeof(serializedLen), inFD);    //TODO handle failure
+        void* serialized = malloc(serializedLen);
+        *destArray[i] = unserializeProduct(serialized);
+        free(serialized);
+    }
+    sh_conn_close(dbConn);
+    return code;
 }

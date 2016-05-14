@@ -115,7 +115,7 @@ Connection conn_open(const char* address) {
         return NULL;
     }
     //Step 6
-    if(strcmp(ack, MESSAGE_OK) == 0) {	//Server forked and listening, open write FIFO again
+    if(atoi(ack) == MESSAGE_OK) {	//Server forked and listening, open write FIFO again
     	connection->outFD = open(connection->outFIFOPath, O_WRONLY);
     	return connection;
     }
@@ -126,7 +126,6 @@ Connection conn_open(const char* address) {
 }
 
 int conn_close(Connection conn) {
-    conn_send(conn, MESSAGE_CLOSE, strlen(MESSAGE_CLOSE)+1);
     close(conn->outFD);
     close(conn->inFD);
     remove(conn->outFIFOPath);		//Removes the file
@@ -163,7 +162,8 @@ int conn_receive(const Connection conn, void** data, size_t* length) {
     return 1;
 }
 
-
+//TODO make this open the file if it existed rather than removing it.
+//That way clients can be started before the server.
 ConnectionParams conn_listen(char *listeningAddress) {
     //Create FIFO where process will listen for connection requests
     if(mkfifo(listeningAddress, 0666) == -1) {    //0666 == anybody can read and write TODO change?
@@ -217,7 +217,8 @@ Connection conn_accept(ConnectionParams params) {
         int outFD = open(c->outFIFOPath, O_WRONLY); //This should not fail, client has opened in read mode
         c->outFD = outFD;
         //Connection complete, send OK to other end
-        conn_send(c, MESSAGE_OK, strlen(MESSAGE_OK)+1);
+        int ok = MESSAGE_OK;
+        conn_send(c, &ok, sizeof(ok));
         return c;
     }
 }

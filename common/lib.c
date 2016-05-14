@@ -79,7 +79,7 @@ int scanInt(const char* msg)
 {
     int result, done = 0;
     do {
-        printf(msg);
+        printf("%s", msg);
         if(scanf("%d",&result) != 1)
         {
             while(getchar() != '\n');   //Empty whatever's left in the buffer

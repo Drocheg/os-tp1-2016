@@ -1,38 +1,20 @@
-/* 
- * File:   database.h
- * Author: juan_
- *
- * Created on April 13, 2016, 10:07 AM
- */
-
 #ifndef DATABASE_H
 #define DATABASE_H
 
+#include "dbConn.h"
 #include <sqlite3.h>
 #include <product.h>
 #include <order.h>
 
 /**
- * Queries the database and returns all products, including those with no stock.
+ * Starts the database server which will communicate through the specified
+ * shared connection.
  * 
- * @param connection A database connection through which to get data.
- * @param destArray Where to store the retrieved products.
- * @return int The number of retrieved products.
+ * @param c The shared connection through which to listen for requests.
+ * @return 0 on error, otherwise returns 1 when the server shuts down normally.
  */
-int db_get_products(sqlite3* connection, Product **destArray);
+int db_server_start(SharedDBConnection c);
 
-/**
- * Attempts to place the specified order. If there is enough stock of every
- * requested product, the order is placed. Otherwise, the order is modified to
- * represent the largest satisfiable order.
- * 
- * @param connection A database connection.
- * @param order The order to place. <b>NOTE: </b>Will be modified if the order
- * could not be satisfied.
- * @return int 1 if the order was placed successfully, 0 if it wasn't. Note that
- * in this case <i>order</i> will have been modified.
- */
-int db_place_order(sqlite3* connection, Order order);
 
 #endif /* DATABASE_H */
 

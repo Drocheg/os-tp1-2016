@@ -27,3 +27,5 @@ clean:
 	-rm -f $(OBJECTS_COMMON)
 	-rm -f $(OBJECTS_CLIENT)
 	-rm -f $(OBJECTS_DUMMY_CLIENT)
+
+.PHONY: default all clean client dummy
