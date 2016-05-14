@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     printf("connected.\n");
     printf("Welcome to IAC (Inter-Alcohol Communication)!\n");
     int done = 0, option;
-    Order order = newOrder(); //Esto es el resumen de las ordenes. Maxima cantidad de diferentes productos es 16.  
+    Order order = order_new(); //Esto es el resumen de las ordenes. Maxima cantidad de diferentes productos es 16.  
     Product *products;//Esto tiene los productos que le manda la base de dato. 
     int numProducts = 0;
     requestProducts(&products, &numProducts, c); //TODO deberia pedirle los productos al servidor.
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
     conn_close(c);
     printf("done.\n");
     printf("See you next time!\n");
-    freeOrder(order);
+    order_free(order);
     return 0;
 }
 
@@ -97,7 +97,7 @@ void startPurchase(int index, Product *products, Order order) {
         }
 
     }while(!done);
-    printTemporalOrder(order);
+    order_print(order);
 }
 
 void endConnection(Connection c){
@@ -114,7 +114,7 @@ void printProducts(Product *products, int num) {
 }
 
 void addProduct(Product product, Order order, int num){ //TODO checkear errores.
-    addToOrder(order, getProductId(product), num);
+    order_add(order, getProductId(product), num, getProductPrice(product));
 }
 
 int requestProducts(Product ** products, int * numProducts, Connection c){ //TODO que los errores no sean prints
@@ -141,8 +141,8 @@ int requestProducts(Product ** products, int * numProducts, Connection c){ //TOD
     *products = malloc(sizeof(*products) * (*numProducts));
     for(int i = 0; i<*numProducts; i++){
         conn_receive(c, &serverResponse, &responseLength);
-        printf("responseLength: %d\n", responseLength);
-        *products[i]=unserializeProduct(serverResponse);
+        printf("responseLength: %zul\n", responseLength);       //TODO wut, zul
+        (*products)[i]=unserializeProduct(serverResponse);
     } 
     printf("Termina requestProducts\n");
     prettyPrintProduct(*products[0]);
@@ -159,7 +159,7 @@ void finishPurchase(Order order, Connection c){
     printf("Whats your address? "); 
     scanf("%s", address);//Esto era super inseguro no? TODO hacer esto bien.
     */
-    setAddress(order,address);
+    order_set_addr(order,address);
     
  
 
@@ -170,8 +170,8 @@ void finishPurchase(Order order, Connection c){
     
     void * serializedOrder;
     size_t serializedOrderSize;
-    serializedOrderSize=serializeOrder(order, &serializedOrder);
-      printf("Todo Ok, antes de MandarOrder\n");
+    serializedOrderSize=order_serialize(order, &serializedOrder);
+    printf("Todo Ok, antes de MandarOrder\n");
     conn_send(c,serializedOrder,serializedOrderSize);
 
     printf("Todo Ok\n");

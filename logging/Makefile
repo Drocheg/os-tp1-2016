@@ -15,10 +15,10 @@ default: daemon
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-daemon: $(HEADERS_LOGGING) $(OBJECTS_LOGGING) $(OBJECTS_DAEMON)
+daemon: $(OBJECTS_LOGGING) $(OBJECTS_DAEMON)
 	$(CC) $(CFLAGS) $(OBJECTS_LOGGING) $(OBJECTS_DAEMON) -o loggingDaemon.bin	
 
-tester: $(HEADERS_LOGGING) $(OBJECTS_LOGGING) $(OBJECTS_TESTER)
+tester: $(OBJECTS_LOGGING) $(OBJECTS_TESTER)
 	$(CC) $(CFLAGS) $(OBJECTS_LOGGING) $(OBJECTS_TESTER) -o loggingTester.bin		
 
 all: daemon tester
@@ -27,3 +27,5 @@ clean:
 	-rm -f $(OBJECTS_LOGGING)
 	-rm -f $(OBJECTS_DAEMON)
 	-rm -f $(OBJECTS_TESTER)
+	
+.PHONY: default all clean daemon tester

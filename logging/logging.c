@@ -1,11 +1,13 @@
 #define _GNU_SOURCE
 
+#include "logging.h"
+
 #include <string.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
 
-#include "logging.h"
 
 int msqid = -1;
 
@@ -22,8 +24,12 @@ int logMessage(const char* message, LogLevel lvl) {
     }
     message_t msg;
     msg.lvl = (long) lvl;
-    strncpy(msg.msg, message, sizeof(msg.msg) - 1); //Don't overflow the message array
-    return !msgsnd(msqid, &msg, sizeof(msg.msg), IPC_NOWAIT) ? 1 : -1;   //Don't block if the message couldn't be sent. 0 = success, -1 = error
+    strncpy(msg.msg, message, sizeof(msg.msg) - 1);                             //Don't overflow the message array
+    int sendResult = msgsnd(msqid, &msg, sizeof(msg.msg), IPC_NOWAIT);          //Don't block if the message couldn't be sent. 0 = success, -1 = error
+    if(sendResult == -1) {
+        printf("Logging failed. Falling back to stdout:\n[%li]: %s\n", msg.lvl, msg.msg);
+    }
+    return sendResult == -1 ? -1 : 1;
 }
 
 int log_info(const char* msg) {

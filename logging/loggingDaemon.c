@@ -18,6 +18,7 @@ void msgqueue_cleanup(int signo) {
     if (signo != SIGINT)
         return;
 
+    printf("Log server received SIGINT, shutting down.\n");
     if (msgctl(msqid, IPC_RMID, NULL) == -1) {
         perror("msgctl");
         exit(1);
@@ -30,21 +31,19 @@ void prettyPrintMessage(message_t m) {
 }
 
 int main(void) {
-    printf("Logging daemon started!\n");
-    signal(SIGINT, msgqueue_cleanup);
+    printf("Log server online! Waiting for messages...\n");
 
+    signal(SIGINT, msgqueue_cleanup);
     msqid = msgget(QUEUE_KEY, 0644 | IPC_CREAT);
     if (msqid == -1) {
         perror("msgget");
         exit(1);
     }
 
-    printf("Message queue ready! Waiting for messages...\n\n");
-
     // Receive messages forever.
     message_t currentMsg;
     while (1) {
-        int status = msgrcv(msqid, &currentMsg, sizeof(currentMsg.msg), 0, 0); //Will (happily) block waiting for messages
+        int status = msgrcv(msqid, &currentMsg, sizeof(currentMsg.msg), 0, 0);  //Will (happily) block waiting for messages
         if (status == -1) {
             perror("msgrcv");
             exit(1);

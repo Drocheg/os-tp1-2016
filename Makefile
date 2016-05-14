@@ -1,17 +1,21 @@
-all: 
-	make -f client/Makefile all
-	make -f server/Makefile all
+all: logging database server client
 
-client:
-	make -f client/Makefile all
+logging:
+	cd logging; make
+
+database:
+	cd database; make
 
 server:
-	make -f server/Makefile all
+	cd server; make
 
-logger:
-	make -f logger/Makefile all
+client:
+	cd client; make
 
 clean:
-	make -f client/Makefile clean
-	make -f server/Makefile clean
-	make -f logger/Makefile clean
+	cd logging; make clean
+	cd database; make clean
+	cd server; make clean
+	cd client; make clean
+
+.PHONY: all clean logging database server client

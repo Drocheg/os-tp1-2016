@@ -47,19 +47,6 @@ static int createProcessFIFOs(const char* basePath, Connection c);
  */
 static int sendFIFOPaths(Connection c, const char* mainServerFIFO);
 
-/**
- * Wrapper function for <i>select()</i> function.
- * 
- * @param maxFD The highest FD number to check.
- * @param readFDs Array of file descriptors to check for reading.
- * @param writeFDs Array of file descriptors to check for writing.
- * @param errFDs Array of file descriptors to check for errors.
- * @param timeoutSec Max seconds until timeout, or -1 if infinite.
- * @param timeoutUSec Max microseconds until timeout, or -1 if infinite.
- * @return int Whatever select() returned.
- */
-static int select_wrapper(int maxFD, const int readFDs[], const int writeFDs[], const int errFDs[], int timeoutSec, int timeoutUSec);
-
 /*
  * Creates a connection between the current process and a server.
  * The procedure is as follows:
@@ -128,7 +115,7 @@ Connection conn_open(const char* address) {
         return NULL;
     }
     //Step 6
-    if(strcmp(ack, MESSAGE_OK) == 0) {	//Server forked and listening, open write FIFO again
+    if(atoi(ack) == MESSAGE_OK) {	//Server forked and listening, open write FIFO again
     	connection->outFD = open(connection->outFIFOPath, O_WRONLY);
     	return connection;
     }
@@ -139,7 +126,6 @@ Connection conn_open(const char* address) {
 }
 
 int conn_close(Connection conn) {
-    conn_send(conn, MESSAGE_CLOSE, strlen(MESSAGE_CLOSE)+1);
     close(conn->outFD);
     close(conn->inFD);
     remove(conn->outFIFOPath);		//Removes the file
@@ -176,7 +162,8 @@ int conn_receive(const Connection conn, void** data, size_t* length) {
     return 1;
 }
 
-
+//TODO make this open the file if it existed rather than removing it.
+//That way clients can be started before the server.
 ConnectionParams conn_listen(char *listeningAddress) {
     //Create FIFO where process will listen for connection requests
     if(mkfifo(listeningAddress, 0666) == -1) {    //0666 == anybody can read and write TODO change?
@@ -230,7 +217,8 @@ Connection conn_accept(ConnectionParams params) {
         int outFD = open(c->outFIFOPath, O_WRONLY); //This should not fail, client has opened in read mode
         c->outFD = outFD;
         //Connection complete, send OK to other end
-        conn_send(c, MESSAGE_OK, strlen(MESSAGE_OK)+1);
+        int ok = MESSAGE_OK;
+        conn_send(c, &ok, sizeof(ok));
         return c;
     }
 }
@@ -279,34 +267,4 @@ static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
     flock(fd, LOCK_UN);
     close(fd);
     return 1;
-}
-
-static int select_wrapper(int maxFD, const int readFDs[], const int writeFDs[], const int errFDs[], int timeoutSec, int timeoutUSec) {
-    fd_set readSet, writeSet, errSet;
-    if(readFDs != NULL) {
-        FD_ZERO(&readSet);
-        for(int i = 0; i < sizeof(readFDs)/sizeof(readFDs[0]); i++) {
-            FD_SET(readFDs[i], &readSet);
-        }
-    }
-    if(writeFDs != NULL) {
-        FD_ZERO(&writeSet);
-        for(int i = 0; i < sizeof(writeFDs)/sizeof(writeFDs[0]); i++) {
-            FD_SET(writeFDs[i], &writeSet);
-        }
-    }
-    if(errFDs != NULL) {
-        FD_ZERO(&errSet);
-        for(int i = 0; i < sizeof(errFDs)/sizeof(errFDs[0]); i++) {
-            FD_SET(errFDs[i], &errSet);
-        }
-    }
-    struct timeval timeout;
-    timeout.tv_sec = timeoutSec < 0 ? 0 : timeoutSec;
-    timeout.tv_usec = timeoutUSec < 0 ? 0 : timeoutUSec;
-    return select(maxFD,
-                    readFDs == NULL ? NULL : &readSet,
-                    writeFDs == NULL ? NULL : &writeSet,
-                    errFDs == NULL ? NULL : &errSet,
-                    timeoutSec < 0 && timeoutUSec < 0 ? NULL : &timeout);
 }

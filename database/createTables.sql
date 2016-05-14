@@ -7,14 +7,14 @@ CREATE TABLE IF NOT EXISTS products(
 );
 
 CREATE TABLE IF NOT EXISTS orders(
-	id			INTEGER PRIMARY KEY NOT NULL,
+	id		INTEGER PRIMARY KEY NOT NULL,   -- Auto increments by default
 	total		FLOAT 	NOT NULL,
 	address		TEXT,
   	`time`		INTEGER NOT NULL -- Unix time
 );
 
 CREATE TABLE IF NOT EXISTS orderEntry(
-	id          INTEGER PRIMARY KEY NOT NULL,
+	id          INTEGER PRIMARY KEY NOT NULL,       -- Auto increments by default
 	order_id    INTEGER NOT NULL,
 	product_id  INTEGER NOT NULL,
 	quantity    INTEGER NOT NULL DEFAULT 1,

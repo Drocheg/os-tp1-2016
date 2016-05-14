@@ -15,6 +15,7 @@ typedef struct {
 
 int main()
 {
+    //Create the shared memory region as file
   char* name = "/tmp-test";
   int fd = shm_open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   if (fd < 0) {
@@ -53,8 +54,7 @@ int main()
   }
 
   // Stay here until we're done.
-  while (sh->counter < 100)
-    ;
+  while (sh->counter < 100);
 
   printf("Final counter value: %d\n", sh->counter);
 
