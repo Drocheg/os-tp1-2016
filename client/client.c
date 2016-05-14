@@ -114,7 +114,7 @@ void printProducts(Product *products, int num) {
 }
 
 void addProduct(Product product, Order order, int num){ //TODO checkear errores.
-    order_add(order, getProductId(product), num);
+    order_add(order, getProductId(product), num, getProductPrice(product));
 }
 
 int requestProducts(Product ** products, int * numProducts, Connection c){ //TODO que los errores no sean prints
@@ -141,8 +141,8 @@ int requestProducts(Product ** products, int * numProducts, Connection c){ //TOD
     *products = malloc(sizeof(*products) * (*numProducts));
     for(int i = 0; i<*numProducts; i++){
         conn_receive(c, &serverResponse, &responseLength);
-        printf("responseLength: %d\n", responseLength);
-        *products[i]=unserializeProduct(serverResponse);
+        printf("responseLength: %zul\n", responseLength);       //TODO wut, zul
+        (*products)[i]=unserializeProduct(serverResponse);
     } 
     printf("Termina requestProducts\n");
     prettyPrintProduct(*products[0]);
@@ -171,7 +171,7 @@ void finishPurchase(Order order, Connection c){
     void * serializedOrder;
     size_t serializedOrderSize;
     serializedOrderSize=order_serialize(order, &serializedOrder);
-      printf("Todo Ok, antes de MandarOrder\n");
+    printf("Todo Ok, antes de MandarOrder\n");
     conn_send(c,serializedOrder,serializedOrderSize);
 
     printf("Todo Ok\n");

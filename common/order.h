@@ -26,6 +26,14 @@ OrderEntry order_get_entry(Order o, int entryNum);
 int orderentry_get_id(OrderEntry e);
 
 /**
+ * Gets the price of the product in the specified order entry.
+ * 
+ * @param e
+ * @return 
+ */
+float orderentry_price(OrderEntry e);
+
+/**
  * Gets the quantity of the product in the specified order entry.
  * 
  * @param e
@@ -71,6 +79,7 @@ char* order_get_addr(Order order);
  */
 void order_set_addr(Order order, char * address);
 
+
 /**
  * Adds the specified quantity of the specified product to the specified entry.
  * If an entry already exists for this product, will update that entry rather
@@ -79,9 +88,11 @@ void order_set_addr(Order order, char * address);
  * @param order
  * @param product_id
  * @param quantity
+ * @param price
  * @return 0 on success, -1 if this order can't have any more entries.
  */
-int order_add(Order order, int product_id, int quantity);
+int order_add(Order order, int product_id, int quantity, float price);
+
 
 /**
  * Pretty-prints the specified order.

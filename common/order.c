@@ -6,12 +6,13 @@
 struct order_entry_t {
     int product_id;
     int quantity;
+    float price;
 };
 
 struct order_t {
     char * address;
     int numEntries;
-    OrderEntry items[ORDER_MAX_SIZE];
+    OrderEntry items[ORDER_MAX_SIZE]; //TODO hacer dinamico o que no te deje agregar más el cliente.
 };
 
 OrderEntry order_get_entry(Order o, int entryNum) {
@@ -33,6 +34,10 @@ int orderentry_get_quantity(OrderEntry e) {
     return e->quantity;
 }
 
+float orderentry_price(OrderEntry e) {
+    return e->price;
+}
+
 Order order_new() {
     Order order = malloc(sizeof (*order));
     order->numEntries = 0;
@@ -40,7 +45,7 @@ Order order_new() {
     return order;
 }
 
-void order_free(Order o) {
+void order_free(Order o) { //TODO free de address? Cuando le doy espacio? 
     for (int i = 0; i < o->numEntries; i++) {
         free(o->items[i]);
     }
@@ -67,20 +72,21 @@ int order_get_num_entries(Order order) {
     return order->numEntries;
 }
 
-int order_add(Order order, int product_id, int quantity) {
+int order_add(Order order, int product_id, int quantity, float price) {
     int i = 0;
     for (i = 0; i < order->numEntries; i++) {
         if (product_id == order->items[i]->product_id) {
             break;
         }
     }
-    if (i + 1 < order->numEntries) {
+    if (i < order->numEntries) {
         order->items[i]->quantity += quantity;
-    } else if (i < ORDER_MAX_SIZE) {
+    } else if (i < ORDER_MAX_SIZE) { 
         order->numEntries++;
         order->items[i] = malloc(sizeof (*(order->items[i])));
         order->items[i]->product_id = product_id;
         order->items[i]->quantity = quantity;
+        order->items[i]->price = price;
     } else {
         return -1;
     }
@@ -106,6 +112,8 @@ size_t order_serialize(const Order o, void **dest) {
         offset += sizeof(o->items[i]->product_id);
         memcpy(*dest+offset, &(o->items[i]->quantity), sizeof(o->items[i]->quantity));
         offset += sizeof(o->items[i]->quantity);
+        memcpy(*dest+offset, &(o->items[i]->price), sizeof(o->items[i]->price));
+        offset += sizeof(o->items[i]->price);
     }
     return totalLen;
 }
@@ -133,12 +141,14 @@ Order order_unserialize(const void* data) {
         offset += sizeof(result->items[i]->product_id);
         memcpy(&(result->items[i]->quantity), data+offset, sizeof(result->items[i]->quantity));
         offset += sizeof(result->items[i]->quantity);
+        memcpy(&(result->items[i]->price), data+offset, sizeof(result->items[i]->price));
+        offset += sizeof(result->items[i]->price);
     }
     return result;
 }
 
 void order_print(Order order) { //TODO Borrar o hacer bien
     for (int i = 0; i < order->numEntries; i++) {
-        printf("%i of %i - %i x %i\n", i+1, order->numEntries, order->items[i]->quantity, order->items[i]->product_id);
+        printf("%i of %i - %i x (id: %i price: %f) \n", i+1, order->numEntries, order->items[i]->quantity, order->items[i]->product_id, order->items[i]->price);
     }
 }
