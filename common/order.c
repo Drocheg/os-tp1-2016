@@ -141,7 +141,7 @@ Order order_unserialize(const void* data) {
         offset += sizeof(result->items[i]->product_id);
         memcpy(&(result->items[i]->quantity), data+offset, sizeof(result->items[i]->quantity));
         offset += sizeof(result->items[i]->quantity);
-        memcpy(data+offset, &(result->items[i]->price), sizeof(result->items[i]->price));
+        memcpy(&(result->items[i]->price), data+offset, sizeof(result->items[i]->price));
         offset += sizeof(result->items[i]->price);
     }
     return result;

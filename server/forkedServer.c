@@ -60,7 +60,7 @@ void sendProducts(Connection c, DbConnection dbConnection){
    
     Product * products;
     products = &product; 
-    //Estas lineas de arriba son para testing. Deberia ser nada mas getProducts() y asignarlo a 1 variable.
+    //Estas lineas de arriba son para testing. Deberia ser nada mas getProducts() y asignarlo a 1
 
     int responseCode = 1;
     conn_send(c, &responseCode, sizeof(responseCode));
@@ -89,7 +89,7 @@ void receiveOrder(Connection c, DbConnection dbConnection){
     void * serializedOrder;
     size_t serializedOrderSize;
     conn_receive(c, &serializedOrder, &serializedOrderSize);
-    Order order = unserializeOrder(serializedOrder);
+    Order order = order_unserialize(serializedOrder);
 
     int stockCheck = checkStockAndChange(order,dbConnection);//Se tiene que tener cuidado de que nadie aceda a la base de datos entre el check y el change
     if(stockCheck<0){ 

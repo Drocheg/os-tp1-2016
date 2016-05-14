@@ -91,7 +91,7 @@ void order_set_addr(Order order, char * address);
  * @param price
  * @return 0 on success, -1 if this order can't have any more entries.
  */
-int order_add(Order order, int product_id, int quantity, int price);
+int order_add(Order order, int product_id, int quantity, float price);
 
 
 /**
