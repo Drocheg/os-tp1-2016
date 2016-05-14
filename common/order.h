@@ -26,6 +26,14 @@ OrderEntry order_get_entry(Order o, int entryNum);
 int orderentry_get_id(OrderEntry e);
 
 /**
+ * Gets the price of the product in the specified order entry.
+ * 
+ * @param e
+ * @return 
+ */
+float orderentry_price(OrderEntry e);
+
+/**
  * Gets the quantity of the product in the specified order entry.
  * 
  * @param e
