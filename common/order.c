@@ -22,11 +22,15 @@ OrderEntry order_get_entry(Order o, int entryNum) {
     return o->items[entryNum];
 }
 
-int orderentry_id(OrderEntry e) {
+int orderentry_get_id(OrderEntry e) {
     return e->product_id;
 }
 
-int orderentry_quantity(OrderEntry e) {
+void orderentry_set_quantity(OrderEntry e, int newQuantity) {
+    e->quantity = newQuantity;
+}
+
+int orderentry_get_quantity(OrderEntry e) {
     return e->quantity;
 }
 
@@ -37,6 +41,7 @@ float orderentry_price(OrderEntry e) {
 Order order_new() {
     Order order = malloc(sizeof (*order));
     order->numEntries = 0;
+    order->address = NULL;
     return order;
 }
 
@@ -45,6 +50,18 @@ void order_free(Order o) { //TODO free de address? Cuando le doy espacio?
         free(o->items[i]);
     }
     free(o);
+}
+
+float order_get_total(Order order) {
+    float result = 0;
+    for (int i = 0; i < order->numEntries; i++) {
+        result += 1/*ACA PRECIO*/ * order->items[i]->quantity;   //Aca Diego pone el precio de cada item
+    }
+    return result;
+}
+
+char* order_get_addr(Order order) {
+    return order->address;
 }
 
 void order_set_addr(Order order, char * address) {
@@ -79,12 +96,14 @@ int order_add(Order order, int product_id, int quantity, float price) {
 size_t order_serialize(const Order o, void **dest) {
     //TODO check for errors and return NULL
     int offset = 0;
-    size_t addressLen = strlen(o->address) + 1;
+    size_t addressLen = o->address == NULL ? 0 : strlen(o->address) + 1;
     size_t totalLen = sizeof (addressLen) + addressLen + sizeof (o->numEntries) + (sizeof (o->items) * sizeof (*(o->items[0])));    //TODO verify sum is correct
     *dest = malloc(totalLen);
     memcpy(*dest, &addressLen, sizeof (addressLen));
     offset += sizeof (addressLen);
-    memcpy(*dest + offset, o->address, addressLen);
+    if(addressLen > 0) {
+        memcpy(*dest + offset, o->address, addressLen);
+    }
     offset += addressLen;
     memcpy(*dest + offset, &(o->numEntries), sizeof (o->numEntries));
     offset += sizeof (o->numEntries);
@@ -106,16 +125,21 @@ Order order_unserialize(const void* data) {
     int offset = 0;
     memcpy(&addressLen, data, sizeof (addressLen));
     offset += sizeof (addressLen);
-    result->address = malloc(addressLen);
-    strncpy(result->address, data + offset, addressLen);
+    if(addressLen == 0) {
+        result->address = NULL;
+    }
+    else {
+        result->address = malloc(addressLen);
+        strncpy(result->address, data + offset, addressLen);
+    }
     offset += addressLen;
     memcpy(&(result->numEntries), data + offset, sizeof (result->numEntries));
     offset += sizeof (result->numEntries);
     for(int i = 0; i < result->numEntries; i++) {
         result->items[i] = malloc(sizeof(*(result->items[i])));
-        memcpy(data+offset, &(result->items[i]->product_id), sizeof(result->items[i]->product_id));
+        memcpy(&(result->items[i]->product_id), data+offset, sizeof(result->items[i]->product_id));
         offset += sizeof(result->items[i]->product_id);
-        memcpy(data+offset, &(result->items[i]->quantity), sizeof(result->items[i]->quantity));
+        memcpy(&(result->items[i]->quantity), data+offset, sizeof(result->items[i]->quantity));
         offset += sizeof(result->items[i]->quantity);
         memcpy(data+offset, &(result->items[i]->price), sizeof(result->items[i]->price));
         offset += sizeof(result->items[i]->price);
