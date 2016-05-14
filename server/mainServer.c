@@ -1,10 +1,10 @@
 #include "comm.h"
 #include "config.h"
 #include <sys/types.h>
-#include <sys/socket.h>
+//#include <sys/socket.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
+//#include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
 
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
 	//int isParentProcess = 1;
 	char *address = getServerAddress();
-	remove(address); //Remove it if it was already present (e.g. forcibly closed from a previous run)
+	/*remove(address); //Remove it if it was already present (e.g. forcibly closed from a previous run)*/
 	ConnectionParams connParams = conn_listen(address);
 	if (connParams == NULL) {
 		fprintf(stderr, "Couldn't start server. Aborting.\n");
