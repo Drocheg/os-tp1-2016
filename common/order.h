@@ -3,22 +3,38 @@
 
 #include "product.h"
 
+#define ORDER_MAX_SIZE 16
+
 typedef struct order_t * Order; //Maxima cantidad de diferentes productos es 16.
+typedef struct order_entry_t* OrderEntry;
 
-int getNumEntries();
+/**
+ * Gets the specified entry number of the specified order, if present.
+ * 
+ * @param o The order to get the entry from.
+ * @param entryNum The entry number, 0-indexed.
+ * @return The order entry or NULL if out of bounds.
+ */
+OrderEntry order_get_entry(Order o, int entryNum);
 
-void setAddress(Order order, char * address);
+int orderentry_id(OrderEntry e);
 
-int addToOrder(Order order, int product_id, int quantity);
+int orderentry_quantity(OrderEntry e);
 
-void printTemporalOrder(Order order);
+int order_get_num_entries();
 
-Order newOrder();
+void order_set_addr(Order order, char * address);
 
-void freeOrder(Order order);
+int order_add(Order order, int product_id, int quantity);
 
-size_t serializeOrder(const Order o, void **dest);
+void order_print(Order order);
 
-Order unserializeOrder(const void* data);
+Order order_new();
+
+void order_free(Order order);
+
+size_t order_serialize(const Order o, void **dest);
+
+Order order_unserialize(const void* data);
 
 #endif /* order_h */

@@ -22,6 +22,9 @@ typedef struct conn_params_t* ConnectionParams;
 #define MESSAGE_CLOSE "KTHXBAI"
 #define MESSAGE_BUY "GIMMEDIS"
 #define MESSAGE_LIST_START "WHATCHUGOT"
+#define CMD_GET_PRODUCTS 42
+#define CMD_PLACE_ORDER 43
+#define CMD_NO_OP 12345
 
 
 /*

@@ -47,19 +47,6 @@ static int createProcessFIFOs(const char* basePath, Connection c);
  */
 static int sendFIFOPaths(Connection c, const char* mainServerFIFO);
 
-/**
- * Wrapper function for <i>select()</i> function.
- * 
- * @param maxFD The highest FD number to check.
- * @param readFDs Array of file descriptors to check for reading.
- * @param writeFDs Array of file descriptors to check for writing.
- * @param errFDs Array of file descriptors to check for errors.
- * @param timeoutSec Max seconds until timeout, or -1 if infinite.
- * @param timeoutUSec Max microseconds until timeout, or -1 if infinite.
- * @return int Whatever select() returned.
- */
-static int select_wrapper(int maxFD, const int readFDs[], const int writeFDs[], const int errFDs[], int timeoutSec, int timeoutUSec);
-
 /*
  * Creates a connection between the current process and a server.
  * The procedure is as follows:
@@ -279,34 +266,4 @@ static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
     flock(fd, LOCK_UN);
     close(fd);
     return 1;
-}
-
-static int select_wrapper(int maxFD, const int readFDs[], const int writeFDs[], const int errFDs[], int timeoutSec, int timeoutUSec) {
-    fd_set readSet, writeSet, errSet;
-    if(readFDs != NULL) {
-        FD_ZERO(&readSet);
-        for(int i = 0; i < sizeof(readFDs)/sizeof(readFDs[0]); i++) {
-            FD_SET(readFDs[i], &readSet);
-        }
-    }
-    if(writeFDs != NULL) {
-        FD_ZERO(&writeSet);
-        for(int i = 0; i < sizeof(writeFDs)/sizeof(writeFDs[0]); i++) {
-            FD_SET(writeFDs[i], &writeSet);
-        }
-    }
-    if(errFDs != NULL) {
-        FD_ZERO(&errSet);
-        for(int i = 0; i < sizeof(errFDs)/sizeof(errFDs[0]); i++) {
-            FD_SET(errFDs[i], &errSet);
-        }
-    }
-    struct timeval timeout;
-    timeout.tv_sec = timeoutSec < 0 ? 0 : timeoutSec;
-    timeout.tv_usec = timeoutUSec < 0 ? 0 : timeoutUSec;
-    return select(maxFD,
-                    readFDs == NULL ? NULL : &readSet,
-                    writeFDs == NULL ? NULL : &writeSet,
-                    errFDs == NULL ? NULL : &errSet,
-                    timeoutSec < 0 && timeoutUSec < 0 ? NULL : &timeout);
 }

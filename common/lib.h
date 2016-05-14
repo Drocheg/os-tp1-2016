@@ -33,6 +33,19 @@ int ensureRead(void *dest, size_t bytes, int fd);
 int ensureWrite(const void *src, size_t bytes, int fd);
 
 /**
+ * Wrapper function for <i>select()</i> function.
+ * 
+ * @param maxFD The highest FD number to check.
+ * @param readFDs Array of file descriptors to check for reading.
+ * @param writeFDs Array of file descriptors to check for writing.
+ * @param errFDs Array of file descriptors to check for errors.
+ * @param timeoutSec Max seconds until timeout, or -1 if infinite.
+ * @param timeoutUSec Max microseconds until timeout, or -1 if infinite.
+ * @return int Whatever select() returned.
+ */
+int select_wrapper(int maxFD, const int readFDs[], const int writeFDs[], const int errFDs[], int timeoutSec, int timeoutUSec);
+
+/**
  * Counts the number of digits in the specified number.
  * 
  * @param number The number to count digits for.
