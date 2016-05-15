@@ -1,3 +1,0 @@
-
-
-char * getLine();

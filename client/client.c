@@ -46,8 +46,8 @@ int main(int argc, char** argv) {
     int done = 0, option;
     Order order = order_new(); //Esto es el resumen de las ordenes. Maxima cantidad de diferentes productos es 16.  
     Product *products;//Esto tiene los productos que le manda la base de dato. 
-    int numProducts = 0;
-    requestProducts(&products, &numProducts, c); //TODO deberia pedirle los productos al servidor.
+    int numProducts = -1;
+    requestProducts(&products, &numProducts, c);
     do {
         printProducts(products, numProducts); 
         option = scanInt("Use the numbers to select the product you would like to purchase\n Press 0 to Exit and 1 to Finish your purchase\n"); //TODO despues vemos la tecla y eso bien. Como hacer con mucho productos bla bla.
@@ -122,10 +122,8 @@ void addProduct(Product product, Order order, int num){ //TODO checkear errores.
     order_add(order, getProductId(product), num, getProductPrice(product));
 }
 
-int requestProducts(Product ** products, int * numProducts, Connection c){ //TODO que los errores no sean prints
-    
-    int messageCode = 1;
-    printf("Sending msgCode%d\n", messageCode );
+int requestProducts(Product ** products, int * numProducts, Connection c) {
+    int messageCode = CMD_GET_PRODUCTS;
     conn_send(c, &messageCode, sizeof(messageCode));
     void * serverResponse;
     size_t responseLength;
@@ -133,24 +131,19 @@ int requestProducts(Product ** products, int * numProducts, Connection c){ //TOD
     conn_receive(c, &serverResponse, &responseLength);
     responseCode = *((int*)serverResponse);
     printf("El codigo de respuesta: %d\n",responseCode);
-
-    if(responseCode < 0){
+    if(responseCode == MESSAGE_ERROR) {
         printf("Error en la respuesta del pedido de productos");
-        return -1;
+        exit(-1);   //TODO change to return -1;
     }
-  
-    conn_receive(c, &serverResponse, &responseLength);
-    *numProducts = *((int*)serverResponse);
-    printf("Cantidad de productos %d\n", *numProducts);
-
-    *products = malloc(sizeof(*products) * (*numProducts));
-    for(int i = 0; i<*numProducts; i++){
-        conn_receive(c, &serverResponse, &responseLength);
-        printf("responseLength: %zul\n", responseLength);       //TODO wut, zul
-        (*products)[i]=unserializeProduct(serverResponse);
-    } 
-    printf("Termina requestProducts\n");
-    prettyPrintProduct(*products[0]);
+    *numProducts = responseCode;
+    *products = malloc(*numProducts);
+    for(int i = 0; i < *numProducts; i++) {
+        size_t serializedLen;
+        conn_receive(c, &serializedLen, sizeof(serializedLen));
+        void* serialized = malloc(serializedLen);
+        *products[i] = unserializeProduct(serialized);
+        free(serialized);
+    }
     return 0;
 }
 

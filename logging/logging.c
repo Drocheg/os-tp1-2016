@@ -19,6 +19,7 @@ int logMessage(const char* message, LogLevel lvl) {
     if(msqid == -1) {
         connectToMsgQueue();    //Try to connect (again if calling multiple times)
         if(msqid == -1) {
+            printf("Logging failed. Falling back to stdout:\n[%li]: %s\n", (long)lvl, message);
             return -1;
         }
     }

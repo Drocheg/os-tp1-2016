@@ -61,7 +61,7 @@ int startDBServer(int* outFD, int* inFD) {
         sprintf(dbWriteFD, "%i", inpipe[1]);
         char* args[4] = {"databaseServer.bin", dbReadFD, dbWriteFD, NULL};
         char* unused[] = {NULL};
-        execve("../database/databaseServer.bin", args, unused);
+        execve("/home/juan/tp1so/database/databaseServer.bin", args, unused);
         //If we're here, execve() failed.
         log_err("execve() failed when starting database server.");
         //TODO kill parent
@@ -97,7 +97,7 @@ int stopDBServer() {
 int startLoggingServer() {
     if ((logPID = fork()) == 0) { //Child, start logging server
         char* unused[1] = {NULL};
-        execve("../logging/loggingDaemon.bin", unused, unused);
+        execve("/home/juan/tp1so/logging/loggingDaemon.bin", unused, unused);
         //If we're here, execve() failed.
         log_err("execve() failed when starting logging server.");
         //TODO kill parent

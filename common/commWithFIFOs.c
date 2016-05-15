@@ -114,13 +114,14 @@ Connection conn_open(const char* address) {
         printf("conn_receive failed. Aborting.\n");
         return NULL;
     }
+    int code = *(int *)(ack);
     //Step 6
-    if(atoi(ack) == MESSAGE_OK) {	//Server forked and listening, open write FIFO again
+    if(code == MESSAGE_OK) {	//Server forked and listening, open write FIFO again
     	connection->outFD = open(connection->outFIFOPath, O_WRONLY);
     	return connection;
     }
     else {
-    	printf("Error, received something else: %s\nAborting.\n", ack);
+    	printf("Error, received something else: %i\nAborting.\n", code);
     	return NULL;
     }
 }
