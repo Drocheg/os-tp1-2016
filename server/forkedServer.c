@@ -21,8 +21,8 @@ void processOrder(Connection c);
 
 static void shut_down(Connection c);
 
-void forkedServer(Connection c) { //RequestProd 1 y  finish 2
-    //De donde saco la base de datos?
+void forkedServer(Connection c) {
+    log_info("Forked server started, listening to client requests.");
     int done = 0;
     do {
         void* clientData;
@@ -93,11 +93,10 @@ void processOrder(Connection c) {
     if(code == MESSAGE_UNSATISFIABLE_ORDER) {
         //Read new serialized order
             ensureRead(&serializedLen, sizeof(serializedLen), inFD);
-            serialized = malloc(serializedLen);
+            serialized = malloc(serializedLen); //Free no?
             ensureRead(serialized, serializedLen, inFD);
             //Send it back
-            conn_send(c, &code, sizeof(code));
-            conn_send(c, serialized, serializedLen);
+            conn_send(c, serialized, serializedLen); 
     }
     sh_conn_close(dbConn);
 }
