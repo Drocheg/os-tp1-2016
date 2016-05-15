@@ -29,9 +29,14 @@ raro que un comprador compre muchos productos distintos.
  **/
 
 int main(int argc, char** argv) {
-    printf("Connecting to server via %s...", getServerAddress());
+
+
+    Config config = setup();
+    char *address = getServerAddress(config);
+
+    printf("Connecting to server via %s...", address);
     fflush(stdout);
-    Connection c = conn_open(getServerAddress());
+    Connection c = conn_open(address);
     if(c == NULL) {
         printf("Couldn't connect. Aborting.\n");
         return -1;

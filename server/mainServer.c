@@ -124,6 +124,10 @@ static void shut_down() {
 }
 
 int main(int argc, char *argv[]) {
+
+    Config config = setup();
+
+
     int dbOutFD, dbInFD;
     //Start logging server
     if(startLoggingServer() == -1) {
@@ -137,7 +141,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     printf("log PID: %i, db PID: %i\n", logPID, dbPID); //TODO remove, for debugging only
-    char *address = getServerAddress();
+    char *address = getListeningPort(config);
     remove(address); //Remove it if it was already present (e.g. forcibly closed from a previous run)
     ConnectionParams connParams = conn_listen(address);
     if (connParams == NULL) {

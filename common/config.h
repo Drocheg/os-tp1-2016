@@ -1,18 +1,41 @@
-/* 
- * File:   config.h
- * Author: juan_
- *
- * Used for parsing the global config file. Only reads from config file.
- */
+#ifndef CONFIG_FILE_H
+#define CONFIG_FILE_H
 
-#ifndef CONFIG_H
-#define CONFIG_H
+
+#ifndef CONF_FILE_PATH
+#define CONF_FILE_PATH "/Users/JuanMarcos/Desktop/TPSO/os-tp1/config.conf"
+#endif
 
 typedef struct config_t * Config;
 
-Config loadConfig();
 
-char * getServerAddress();
+Config setup();
 
-#endif /* CONFIG_H */
+char *getServerAddress(Config config);
 
+char *getListeningPort(Config config);
+
+char *getDatabaseAddress(Config config);
+
+char *getLoggingAddress(Config config);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#endif /*CONFIG_FILE_H*/
