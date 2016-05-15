@@ -26,7 +26,8 @@ void forkedServer(Connection c) {
     int done = 0;
     do {
         void* clientData;
-        conn_receive(c, &clientData, NULL);
+        size_t length;
+        conn_receive(c, &clientData, &length);
         int msgCode = *((int*) clientData);
         free(clientData);
         switch (msgCode) {      //TODO use function array?
@@ -92,11 +93,10 @@ void processOrder(Connection c) {
     if(code == MESSAGE_UNSATISFIABLE_ORDER) {
         //Read new serialized order
             ensureRead(&serializedLen, sizeof(serializedLen), inFD);
-            serialized = malloc(serializedLen);
+            serialized = malloc(serializedLen); //Free no?
             ensureRead(serialized, serializedLen, inFD);
             //Send it back
-            conn_send(c, &code, sizeof(code));
-            conn_send(c, serialized, serializedLen);
+            conn_send(c, serialized, serializedLen); 
     }
     sh_conn_close(dbConn);
 }

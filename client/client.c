@@ -14,7 +14,7 @@
 #include <order.h>
 
 void startPurchase(int index, Product *products, Order order);
-void finishPurchase(Order order, Connection c);
+int finishPurchase(Order * order, Connection c);
 void printProducts(Product *products, int num);
 void addProduct(Product product, Order order, int num);
 int requestProducts(Product ** products, int * numProducts, Connection c);
@@ -47,27 +47,33 @@ int main(int argc, char** argv) {
     Order order = order_new(); //Esto es el resumen de las ordenes. Maxima cantidad de diferentes productos es 16.  
     Product *products; //Esto tiene los productos que le manda la base de dato. 
     int numProducts = -1;
-    requestProducts(&products, &numProducts, c);
-    printf("These are the available products:\n");
-    printProducts(products, numProducts);
-    do {
+    if(requestProducts(&products, &numProducts, c)==-1){
+        printf("Error reading products.\n");
+        done=1;
+    }
+    
+    while(!done){
+        printf("These are the available products:\n");
+        printProducts(products, numProducts);
         option = scanInt("Use the numbers to select the product you would like to purchase\n Press 0 to Exit and 1 to Finish your purchase\n"); //TODO despues vemos la tecla y eso bien. Como hacer con mucho productos bla bla.
         if(option == 0) {
             done = 1;
             endConnection(c);
         }
         else if(option == 1) {
-            printf("Finishing purchase not implemented yet.\n");
-//            finishPurchase(order, c);
+            if(finishPurchase(&order, c)==-1){
+                printf("Error sending orden");
+                done = 1;
+            }
         }
         else if(option < 0 || option-2 >= numProducts) {
             printf("Invalid option selected.\n");
         }
         else {
             printf("Adding products not implemented yet.\n");
-//            startPurchase(option - 2, products, order); //Entrar en la etapa de comprar. Se pasa opcion-2 porque ese es el indice en el array.
+            startPurchase(option - 2, products, order); //Entrar en la etapa de comprar. Se pasa opcion-2 porque ese es el indice en el array.
         }
-    } while (!done);
+    };
 
     printf("Disconnecting...");
     fflush(stdout);
@@ -127,7 +133,6 @@ int requestProducts(Product ** products, int * numProducts, Connection c) {
     responseCode = *((int*) serverResponse);
     if (responseCode == MESSAGE_ERROR) {
 //        log_warn("Client received error code from server when requesting products.");
-        printf("Error reading products.\n");
         return -1;
     }
     *numProducts = responseCode;
@@ -142,7 +147,7 @@ int requestProducts(Product ** products, int * numProducts, Connection c) {
     return 0;
 }
 
-void finishPurchase(Order order, Connection c) {
+int finishPurchase(Order * order, Connection c) {
     //TODO
     //Primero pido el address y despues mando la orden con el address.?? O pido el address primero?
 
@@ -151,30 +156,36 @@ void finishPurchase(Order order, Connection c) {
     printf("Whats your address? "); 
     scanf("%s", address);//Esto era super inseguro no? TODO hacer esto bien.
      */
-    order_set_addr(order, address);
+    order_set_addr(*order, address);
 
 
 
-    int messageCode = 2;
+    int messageCode = CMD_PLACE_ORDER;
     conn_send(c, &messageCode, sizeof (messageCode));
 
     printf("Todo Ok, antes de SerializarOrder\n");
 
     void * serializedOrder;
     size_t serializedOrderSize;
-    serializedOrderSize = order_serialize(order, &serializedOrder);
-    printf("Todo Ok, antes de MandarOrder\n");
+    serializedOrderSize = order_serialize(*order, &serializedOrder);
+    
     conn_send(c, serializedOrder, serializedOrderSize);
 
-    printf("Todo Ok\n");
     void * serverResponse;
     size_t responseLength;
     int responseCode;
     conn_receive(c, &serverResponse, &responseLength);
     responseCode = *((int*) serverResponse);
-    printf("responseCode: %d\n", responseCode);
+    printf("responseCode: %d\n", responseCode); //Testing, borrar
 
-    if (responseCode < 0) { //Ver que hacer cuando esta mal el stock.
-        printf("Error en la respuesta del envio de la Orden");
+    if (responseCode == MESSAGE_ERROR) { //Ver que hacer cuando esta mal el stock.
+        return -1;
+    }
+    if(responseCode == MESSAGE_UNSATISFIABLE_ORDER){
+        printf("Error, not enough stock. Your order has been changed to the new stock.\n New Order: \n");
+        conn_receive(c, &serializedOrder, &serializedOrderSize);
+        order_free(*order);
+        *order = order_unserialize(serializedOrder);
+        order_print(order);
     }
 }
