@@ -108,11 +108,14 @@ void send_products(int outFD) {
     //Got products, now send em and free em at the same time
     ensureWrite(&numProds, sizeof (numProds), outFD);
     for (int i = 0; i < numProds; i++) {
-        char *serialized;
-        int len = serializeProduct(prods[i], (void **) &serialized);
-        ensureWrite(serialized, len, outFD);
-        freeProduct(prods[i]);
+        void* serialized;
+        size_t serializedLen = serializeProduct(prods[i], &serialized);
+        ensureWrite(&serializedLen, sizeof(serializedLen), outFD);
+        ensureWrite(serialized, serializedLen, outFD);
         free(serialized);
+    }
+    for(int i = 0; i < numProds; i++) {
+        free(prods[i]);
     }
     free(prods);
 }
@@ -308,11 +311,9 @@ int main(int argc, char *argv[], char *envp[]) {
             log_warn("Database select failed. Trying again.");
             continue;
         }
-        //Received request
-        ensureRead(&msgLength, sizeof (msgLength), inFD);
-        clientData = malloc(msgLength);
-        ensureRead(clientData, msgLength, inFD);
-        int msgCode = *((int*) clientData);
+        //Received command code
+        int msgCode;
+        ensureRead(&msgCode, sizeof (msgCode), inFD);
         switch (msgCode) {
             case CMD_GET_PRODUCTS:
                 send_products(outFD);

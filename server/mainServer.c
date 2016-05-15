@@ -53,6 +53,7 @@ int startDBServer(int* outFD, int* inFD) {
         log_err("Main server couldn't create shared connection.");
         return -1;
     }
+    printf("OUT read: %i, write: %i\nIN read: %i, write: %i\n", outpipe[0], outpipe[1], inpipe[0], inpipe[1]);
     //Shared connection set up, fork and start database
     if ((dbPID = fork()) == 0) { //Child, start database server
         char dbReadFD[countDigits(outpipe[0]) + 1],

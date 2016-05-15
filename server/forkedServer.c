@@ -29,7 +29,6 @@ void forkedServer(Connection c) { //RequestProd 1 y  finish 2
         conn_receive(c, &clientData, NULL);
         int msgCode = *((int*) clientData);
         free(clientData);
-        printf("Received %d\n", msgCode);
         switch (msgCode) {      //TODO use function array?
             case CMD_GET_PRODUCTS:
                 sendProducts(c);
@@ -50,7 +49,7 @@ void forkedServer(Connection c) { //RequestProd 1 y  finish 2
 }
 
 void sendProducts(Connection c) {
-    Product * products;
+    Product* products;
     int numProducts = getProdcuts(&products);
     int responseCode;
     if(numProducts == -1) {
@@ -103,6 +102,7 @@ void processOrder(Connection c) {
 }
 
 void shut_down(Connection c) {
+    log_info("Forked server shutting down.");
     conn_close(c);
 }
 
@@ -115,17 +115,18 @@ int getProdcuts(Product **destArray) {
     if(!ensureWrite(&code, sizeof(code), outFD)) {
         return -1;
     }
-    if(!ensureRead(&code, sizeof(code), inFD) || code == MESSAGE_ERROR) {
+    int readResult;
+    if(!(readResult = ensureRead(&code, sizeof(code), inFD)) || code == MESSAGE_ERROR) {
         return -1;
     }
-    printf("Received answer from database: %i\n", code);
     //Code contains the number of products returned.
     *destArray = malloc(sizeof(**destArray)*code);
     for(int i = 0; i < code; i++) {
         size_t serializedLen;
         ensureRead(&serializedLen, sizeof(serializedLen), inFD);    //TODO handle failure
         void* serialized = malloc(serializedLen);
-        *(destArray[i]) = unserializeProduct(serialized);
+        ensureRead(serialized, serializedLen, inFD);    //TODO handle failure
+        (*destArray)[i] = unserializeProduct(serialized);
         free(serialized);
     }
     sh_conn_close(dbConn);

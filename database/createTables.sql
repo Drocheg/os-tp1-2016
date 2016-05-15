@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS products(
-	id			INTEGER		PRIMARY KEY NOT NULL,
+	id		INTEGER		PRIMARY KEY NOT NULL,
 	name		TEXT		NOT NULL,
 	quantity	INTEGER		NOT NULL DEFAULT 0 check(quantity >= 0),
 	price		FLOAT		NOT NULL,
