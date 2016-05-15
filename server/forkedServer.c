@@ -21,8 +21,8 @@ void processOrder(Connection c);
 
 static void shut_down(Connection c);
 
-void forkedServer(Connection c) { //RequestProd 1 y  finish 2
-    //De donde saco la base de datos?
+void forkedServer(Connection c) {
+    log_info("Forked server started, listening to client requests.");
     int done = 0;
     do {
         void* clientData;

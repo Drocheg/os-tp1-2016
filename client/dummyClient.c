@@ -11,8 +11,8 @@
 #include <comm.h>
 
 int main(int argc, char** argv) {
-    //TODO doesn't work for more than 1 client, make it werk!
-    char *addr = getServerAddress();
+    Config config = setup();
+    char *addr = getServerAddress(config);
     int pid = getpid();
     printf("Dummy client #%i connecting...", pid);
     fflush(stdout);
@@ -22,12 +22,16 @@ int main(int argc, char** argv) {
         return -1;
     }
     printf("connected.\n");
-    int min = 1, max = 10, waitSec = (int)(rand() / ( (double)RAND_MAX + 1 )*(max-min+1)+min);
+    int min = 1,
+        max = 10,
+        waitSec = (int)(rand() / ( (double)RAND_MAX + 1 )*(max-min+1)+min);
     printf("Dummy client #%i sleeping for %i sec...", pid, waitSec);
     fflush(stdout);
     sleep(waitSec);
     printf("Dummy client #%i woke up, disconnecting...", pid);
     fflush(stdout);
+    int messageCode = MESSAGE_CLOSE;
+    conn_send(c, &messageCode, sizeof (messageCode));
     conn_close(c);
     printf("done. Bye bye from dummy client #%i\n", pid);
     return 0;

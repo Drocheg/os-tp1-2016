@@ -19,7 +19,7 @@ int logMessage(const char* message, LogLevel lvl) {
     if(msqid == -1) {
         connectToMsgQueue();    //Try to connect (again if calling multiple times)
         if(msqid == -1) {
-            printf("Logging failed. Falling back to stdout:\n[%li]: %s\n", (long)lvl, message);
+            printf("Couldn't connect to log message queue. Falling back to stdout:\n[%li]: %s\n", (long)lvl, message);
             return -1;
         }
     }
@@ -28,7 +28,7 @@ int logMessage(const char* message, LogLevel lvl) {
     strncpy(msg.msg, message, sizeof(msg.msg) - 1);                             //Don't overflow the message array
     int sendResult = msgsnd(msqid, &msg, sizeof(msg.msg), IPC_NOWAIT);          //Don't block if the message couldn't be sent. 0 = success, -1 = error
     if(sendResult == -1) {
-        printf("Logging failed. Falling back to stdout:\n[%li]: %s\n", msg.lvl, msg.msg);
+        printf("Sending log message failed. Falling back to stdout:\n[%li]: %s\n", (long)msg.lvl, msg.msg);
     }
     return sendResult == -1 ? -1 : 1;
 }

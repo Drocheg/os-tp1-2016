@@ -47,7 +47,6 @@ int main(void) {
             perror("msgrcv");
             exit(1);
         }
-        printf("Logging server received message\n");
         prettyPrintMessage(currentMsg);
     }
     return 0;
