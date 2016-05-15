@@ -6,7 +6,7 @@ typedef struct {        //TODO should this be here? Both server and logging.c ne
     char msg[256]; //Fixed max message length
 } message_t;
 
-typedef enum {INFO, WARNING, ERROR} LogLevel;
+typedef enum {INFO = 1, WARNING, ERROR} LogLevel;
 
 // Some seemingly random long for this message queue. Easier to use this than
 // have a common readable file.

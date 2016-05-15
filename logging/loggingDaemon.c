@@ -10,7 +10,7 @@
 #include <signal.h>
 #include "logging.h"
 
-/*volatile*/ int msqid; //TODO borrar volatile si no hace falta -- está para que el compilador no la cachee (http://stackoverflow.com/questions/246127/why-is-volatile-needed-in-c)
+volatile int msqid; //TODO borrar volatile si no hace falta -- está para que el compilador no la cachee (http://stackoverflow.com/questions/246127/why-is-volatile-needed-in-c)
              
 const char* LevelNames[] = {"INFO", "WARNING", "ERROR"};
 
@@ -27,12 +27,10 @@ void msgqueue_cleanup(int signo) {
 }
 
 void prettyPrintMessage(message_t m) {
-    printf("[%s]: %s\n", LevelNames[m.lvl], m.msg);
+    printf("[%s]: %s\n", LevelNames[m.lvl-1], m.msg);
 }
 
 int main(void) {
-    printf("Log server online! Waiting for messages...\n");
-
     signal(SIGINT, msgqueue_cleanup);
     msqid = msgget(QUEUE_KEY, 0644 | IPC_CREAT);
     if (msqid == -1) {
@@ -40,6 +38,7 @@ int main(void) {
         exit(1);
     }
 
+    printf("Log server online! Waiting for messages...\n");
     // Receive messages forever.
     message_t currentMsg;
     while (1) {
@@ -48,6 +47,7 @@ int main(void) {
             perror("msgrcv");
             exit(1);
         }
+        printf("Logging server received message\n");
         prettyPrintMessage(currentMsg);
     }
     return 0;
