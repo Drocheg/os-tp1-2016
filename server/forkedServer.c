@@ -26,7 +26,8 @@ void forkedServer(Connection c) { //RequestProd 1 y  finish 2
     int done = 0;
     do {
         void* clientData;
-        conn_receive(c, &clientData, NULL);
+        size_t length;
+        conn_receive(c, &clientData, &length);
         int msgCode = *((int*) clientData);
         free(clientData);
         switch (msgCode) {      //TODO use function array?

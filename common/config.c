@@ -366,7 +366,7 @@ char * readLine(FILE *fp) {
 static int isParam(char *line) {
 
 	regex_t regex;
-	char *expr = "^[a-zA-Z][a-zA-Z0-9 ]*(:|=)[^\n\t:=]*$";
+	char *expr = "^[a-zA-Z][a-zA-Z0-9 ]*=[^\n\t=]*$";
 	regcomp(&regex, expr, REG_EXTENDED);
 	return !regexec(&regex, line, 0, NULL, 0);
 
@@ -384,7 +384,7 @@ static int isSectionTag(char *line) {
 static char * getValue(char *line) {
 
 	int i = 0;
-	while (line[i++] != ':') {
+	while (line[i++] != '=') {
 		;
 	}
 	return (char *)( ((void *)line) + (i * sizeof(char)) );
@@ -395,7 +395,7 @@ static char *getParam(char *line) {
 	
 	int i = 0;
 	char *result;
-	while(line[i] != ':') {
+	while(line[i] != '=') {
 		i++;
 	}
 	result = calloc(1, i * sizeof(char));
