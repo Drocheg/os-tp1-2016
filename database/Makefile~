@@ -43,16 +43,16 @@ fifos: serverfifos commandlinefifos
 sockets: serversockets commandlinesockets
 
 
-serverfifos: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_SERVER) $(OBJECTS_FIFOS)
+serverfifos: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_SERVER)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_SERVER) $(OBJECTS_FIFOS) -o databaseServer.bin -lrt -lpthread -ldl
 
-commandlinefifos: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_COMMANDLINE) $(OBJECTS_FIFOS)
+commandlinefifos: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_COMMANDLINE)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_COMMANDLINE) $(OBJECTS_FIFOS) -o dbCommandline.bin -lrt -lpthread -ldl
 
-serversockets: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_SERVER) $(OBJECTS_SOCKETS)
+serversockets: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_SERVER)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_SERVER) $(OBJECTS_SOCKETS) -o databaseServer.bin -lrt -lpthread -ldl
 
-commandlinesockets: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_COMMANDLINE) $(OBJECTS_SOCKETS)
+commandlinesockets: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_COMMANDLINE)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_COMMANDLINE) $(OBJECTS_SOCKETS) -o dbCommandline.bin -lrt -lpthread -ldl
 
 clean:

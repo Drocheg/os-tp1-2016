@@ -1,3 +1,6 @@
+all: sockets
+
+
 sockets: logging socketsdatabase socketsserver socketsclient socketsconfig
 
 fifos: logging  fifosserver fifosclient fifosdatabase fifosconfig

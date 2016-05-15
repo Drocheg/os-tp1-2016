@@ -26,10 +26,10 @@ default: sockets
 #server: $(OBJECTS_COMMON) $(OBJECTS_SERVER)
 #	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_SERVER) -o server.bin -lrt -lpthread -ldl
 
-fifos: $(OBJECTS_COMMON) $(OBJECTS_SERVER) $(OBJECTS_FIFOS)
+fifos: $(OBJECTS_COMMON) $(OBJECTS_SERVER)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_SERVER) $(OBJECTS_FIFOS) -o server.bin -lrt -lpthread -ldl
 
-sockets: $(OBJECTS_COMMON) $(OBJECTS_SERVER) $(OBJECTS_SOCKETS)
+sockets: $(OBJECTS_COMMON) $(OBJECTS_SERVER)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_SERVER) $(OBJECTS_SOCKETS) -o server.bin -lrt -lpthread -ldl
 
 
