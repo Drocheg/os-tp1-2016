@@ -25,17 +25,17 @@ void forkedServer(Connection c) {
     log_info("Forked server started, listening to client requests.");
     int done = 0;
     char messageBuff[256];
-    int pid = getpid(); //TODO use the one returned in fork
+    int pid = getpid();
     do {
         void* clientData;
         size_t length;
         conn_receive(c, &clientData, &length);
         int msgCode = *((int*) clientData);
         snprintf(messageBuff, sizeof (messageBuff) - 1, "Forked server #%i received code %i", pid, msgCode);
-        messageBuff[sizeof (messageBuff) - 1] = 0; //TODO maybe avoid snprintf?
+        messageBuff[sizeof (messageBuff) - 1] = 0; 
         log_info(messageBuff);
         free(clientData);
-        switch (msgCode) { //TODO use function array?
+        switch (msgCode) { 
             case CMD_GET_PRODUCTS:
                 sendProducts(c);
                 break;
@@ -130,9 +130,13 @@ int getProdcuts(Product **destArray) {
     *destArray = malloc(sizeof (**destArray) * code);
     for (int i = 0; i < code; i++) {
         size_t serializedLen;
-        ensureRead(&serializedLen, sizeof (serializedLen), inFD); //TODO handle failure
+        if(!(ensureRead(&serializedLen, sizeof (serializedLen), inFD)){
+            return -1;
+        } 
         void* serialized = malloc(serializedLen);
-        ensureRead(serialized, serializedLen, inFD); //TODO handle failure
+        if(ensureRead(serialized, serializedLen, inFD)){
+            return -1;
+        }
         (*destArray)[i] = productUnserialize(serialized);
         free(serialized);
     }

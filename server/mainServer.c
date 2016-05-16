@@ -5,10 +5,8 @@
 #include "forkedServer.h"
 
 #include <sys/types.h>
-//#include <sys/socket.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>
@@ -84,7 +82,7 @@ int stopDBServer() {
     if(writeResult) {
         dbConn = NULL;
     }
-    sleep(1);   //TODO do waitpid or something
+    sleep(1);   //TODO do waitpid or something 
     sh_conn_destroy(dbConn);
     return writeResult ? 1 : -1;
 }
