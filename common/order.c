@@ -46,7 +46,7 @@ Order orderNew() {
     return order;
 }
 
-void orderFree(Order o) { //TODO free de address? Cuando le doy espacio? 
+void orderFree(Order o) {
     for (int i = 0; i < o->numEntries; i++) {
         if(o->items[i] != NULL) {
             free(o->items[i]);
@@ -107,7 +107,6 @@ int orderAdd(Order order, int product_id, int quantity, float price) {
 }
 
 size_t orderSerialize(const Order o, void **dest) {
-    //TODO check for errors and return NULL
     int offset = 0;
     size_t addressLen = o->address == NULL ? 0 : strlen(o->address) + 1;
     size_t totalLen = sizeof (addressLen) + addressLen + sizeof(o->numEntries) + (o->numEntries * sizeof(struct order_entry_t));
@@ -132,7 +131,6 @@ size_t orderSerialize(const Order o, void **dest) {
 }
 
 Order orderUnserialize(const void* data) {
-    //TODO check for errors and return NULL
     Order result = orderNew();
     size_t addressLen = -1;
     int offset = 0;

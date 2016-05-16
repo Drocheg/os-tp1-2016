@@ -163,11 +163,9 @@ int conn_receive(const Connection conn, void** data, size_t* length) {
     return 1;
 }
 
-//TODO make this open the file if it existed rather than removing it.
-//That way clients can be started before the server.
 ConnectionParams conn_listen(char *listeningAddress) {
     //Create FIFO where process will listen for connection requests
-    if(mkfifo(listeningAddress, 0666) == -1) {    //0666 == anybody can read and write TODO change?
+    if(mkfifo(listeningAddress, 0666) == -1) {
         printf("Error creating connection FIFOs for process #%i.\n", getpid());
         return NULL;
     }
@@ -188,9 +186,6 @@ Connection conn_accept(ConnectionParams params) {
         printf("Error with select(). Aborting.\n");
         return NULL;
     }
-//    else if(selectResult == 0) {    //Timed out
-//        return NULL;    //TODO remove timeout? NULL is returned for errors
-//    }
     else {
         Connection c = malloc(sizeof(*c));
         /*
@@ -231,7 +226,7 @@ static int createProcessFIFOs(const char* basePath, Connection c) {
         return 0;
     }
     sprintf(c->outFIFOPath, "%s-out", basePath);
-    if(mkfifo(c->outFIFOPath, 0666) == -1) {	//0666 == anybody can read and write TODO change?
+    if(mkfifo(c->outFIFOPath, 0666) == -1) {
         //If this fails, it might be because there are leftover FIFOs that weren't erased and the file already exists
         free(c->outFIFOPath);
         return 0;
@@ -261,7 +256,7 @@ static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
     }
     size_t len = strlen(c->outFIFOPath)+1;
     if(!ensureWrite(&len, sizeof(len), fd) || !ensureWrite(c->outFIFOPath, len, fd)) {
-        close(fd);  //TODO should this be here? And below, too
+        close(fd);
         return 0;
     }
     len = strlen(c->inFIFOPath)+1;
