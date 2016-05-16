@@ -13,6 +13,13 @@
 
 extern SharedDBConnection dbConn;
 
+struct connections_t {
+
+	Connection clientConnection;
+	SharedDBConnection *dbConn;
+
+};
+
 /**
  * Main loop for a forked server. The server will communicate with the
  * client in the specified connection.

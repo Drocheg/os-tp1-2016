@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
     //Start logging server
     if(startLoggingServer() == -1) {
         printf("Couldn't start logging server. Aborting.\n");
-        exit(-1);
+        return -1;
     }
     printf("Logging server started with PID #%i\n", logPID);
     //Start database server

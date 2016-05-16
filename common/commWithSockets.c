@@ -133,7 +133,11 @@ int conn_send(const Connection connection, const void* data, const size_t length
  */
 int conn_receive(const Connection conn, void** data, size_t* length) {
 
-	int result1, result2;
+	//int result1, result2;
+    size_t aux;
+    if (length == NULL) {
+        length = &aux;
+    }
 	if (!ensureRead(length, sizeof(*length), conn->socketfd)) {
 		return 0;
 	}
