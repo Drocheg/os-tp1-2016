@@ -25,6 +25,9 @@ clean:
 	-rm -f $(OBJECTS_COMMON)
 	-rm -f $(OBJECTS_SERVER)
 	-rm -f $(OBJECTS_COMMANDLINE)
+	-rm -f $(OBJECTS_FIFOS)
+	-rm -f $(OBJECTS_SOCKETS)
+	-rm -f *.o
 
 default: sockets
 
@@ -54,10 +57,6 @@ serversockets: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_SERVER) $(OBJECTS
 
 commandlinesockets: $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_COMMANDLINE) $(OBJECTS_SOCKETS)
 	$(CC) $(CFLAGS) $(OBJECTS_COMMON) $(OBJECTS_DATABASE) $(OBJECTS_COMMANDLINE) $(OBJECTS_SOCKETS) -o dbCommandline.bin -lrt -lpthread -ldl
-
-clean:
-	-rm -f $(OBJECTS_FIFOS)
-	-rm -f $(OBJECTS_SOCKETS)
 
 	
 test:
