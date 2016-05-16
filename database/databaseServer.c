@@ -231,9 +231,10 @@ int update_stock(Order o) {
  */
 int verifyOrderStock(Order *o) {
     int satisfied = 1;
+    log_info("Database server verifying order.");
     //Verify that every item quantity has enough stock
-    for (int i = 0; i < order_get_num_entries(o); i++) {
-        OrderEntry e = order_get_entry(o, i);
+    for (int i = 0; i < order_get_num_entries(*o); i++) {
+        OrderEntry e = order_get_entry(*o, i);
         int quantity = orderentry_get_quantity(e),
                 stock = get_stock(orderentry_get_id(e));
         if (stock < quantity) {
@@ -241,6 +242,7 @@ int verifyOrderStock(Order *o) {
             orderentry_set_quantity(e, stock);
         }
     }
+    log_info(satisfied ? "Order verified." : "Unsatisfiable order, updated order.");
     return satisfied;
 }
 

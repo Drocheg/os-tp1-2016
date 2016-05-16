@@ -16,6 +16,7 @@ docs/SQLite/*
 testing/*
 db
 */db
+dist/*
 
 # Object files
 *.o

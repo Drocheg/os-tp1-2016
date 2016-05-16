@@ -214,16 +214,13 @@ int submitOrder(Order *order, Connection conn) {
     void * buff;
     size_t buffSize;
     buffSize = order_serialize(*order, &buff);
-    Order o2 = order_unserialize(*order);
-    order_print(o2);
     conn_send(conn, buff, buffSize);
     free(buff);
     //Order sent, parse response
     int responseCode;
     conn_receive(conn, &buff, NULL); //The first part of the response will be an int, ignore length
     responseCode = *((int*) buff);
-    printf("Client got back %i\n", responseCode);
-    free(buff); //TODO can be error here
+    free(buff);
     if (responseCode == MESSAGE_ERROR) { //TODO abort?
         return -1;
     }

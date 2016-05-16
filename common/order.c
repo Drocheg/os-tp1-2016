@@ -147,7 +147,6 @@ Order order_unserialize(const void* data) {
     offset += sizeof (result->numEntries);
     for(int i = 0; i < result->numEntries; i++) {
         result->items[i] = malloc(sizeof(*(result->items[i])));
-        int la = sizeof(*(result->items[i]));   //TODO remove
         memcpy(&(result->items[i]->product_id), data+offset, sizeof(result->items[i]->product_id));
         offset += sizeof(result->items[i]->product_id);
         memcpy(&(result->items[i]->quantity), data+offset, sizeof(result->items[i]->quantity));
