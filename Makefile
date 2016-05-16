@@ -1,10 +1,6 @@
-sockets: logging socketsdatabase socketsserver socketsclient socketsconfig
+sockets: logging database socketsserver socketsclient done socketsconfig 
 
-fifos: logging  fifosserver fifosclient fifosdatabase fifosconfig
-
-
-socketsdatabase: 
-	cd database; make sockets
+fifos: logging database fifosserver fifosclient done fifosconfig
 
 socketsclient: 
 	cd client; make sockets
@@ -13,11 +9,7 @@ socketsserver:
 	cd server; make sockets
 
 socketsconfig:
-	cp ./configSkeleton/sockets.conf ./config.conf
-
-
-fifosdatabase: 
-	cd database; make fifos
+	cp ./configSkeleton/sockets.conf ./dist/config.conf
 
 fifosclient: 
 	cd client; make fifos
@@ -26,28 +18,26 @@ fifosserver:
 	cd server; make fifos
 
 fifosconfig:
-	cp ./configSkeleton/fifos.conf ./config.conf
-
-
-
+	cp ./configSkeleton/fifos.conf ./dist/config.conf
 
 logging:
 	cd logging; make
 
-#database:
-#	cd database; make
+done:
+	mkdir -p dist
+	mv database/databaseServer.bin ./dist/
+	mv client/client.bin ./dist/
+	mv server/server.bin ./dist/
+	mv logging/loggingDaemon.bin ./dist/
 
-#server:
-#	cd server; make
-
-#client:
-#	cd client; make
+database:
+	cd database; make
 
 clean:
 	cd logging; make clean
 	cd database; make clean
 	cd server; make clean
 	cd client; make clean
-	rm -f config.conf
+	rm -rf ./dist
 
-.PHONY: all clean logging database server client sockets fifos
+.PHONY: clean logging database sockets fifos
