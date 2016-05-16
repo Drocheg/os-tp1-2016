@@ -43,8 +43,9 @@ int submitOrder(Order *order);
 int requestProducts(Product ** products, int * numProducts);
 
 void printProducts(Product *products, int num);
-void addProduct(Product product, Order order, int num);
+
 void disconnect();
+
 void shutDown(int signo);
 
 int main(int argc, char** argv) {
@@ -153,7 +154,7 @@ void addToOrder(int index, Product *products, Order order) {
     } while (!done);
 }
 
-void shutdown(int signo) {
+void shutDown(int signo) {
     if (signo != SIGINT)
         return;
 
