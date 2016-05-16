@@ -60,7 +60,6 @@ static int createTCPSocketForServer(ConnectionParams connection);
 Connection conn_open(const char* address) {
 
     Connection connection;
-    int result;
 
     if (!isValidAddress(address)) {
         return NULL;
@@ -135,7 +134,6 @@ int conn_receive(const Connection conn, void** data, size_t* length) {
     if (length == NULL) { //If there's nowhere to store the read length, store it within the function, then discard
         length = &lenAux;
     }
-    int result1, result2;
     if (!ensureRead(length, sizeof (*length), conn->socketfd)) {
         return 0;
     }
