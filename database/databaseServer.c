@@ -343,6 +343,7 @@ int main(int argc, char *argv[], char *envp[]) {
     int inFD = atoi(argv[1]),
             outFD = atoi(argv[2]),
             inSelect[1] = {inFD};
+    remove(dbFileName);
     if (sqlite3_open(dbFileName, &databaseHandle)) {
         log_err("Database server couldn't open database:");
         log_err(sqlite3_errmsg(databaseHandle));
