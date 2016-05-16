@@ -9,15 +9,13 @@
 #define FORKEDSERVER_H_
 
 #include <comm.h>
-#include <dbConn.h>
+#include "dbConn.h"
 
 extern SharedDBConnection dbConn;
 
 struct connections_t {
-
 	Connection clientConnection;
 	SharedDBConnection *dbConn;
-
 };
 
 /**

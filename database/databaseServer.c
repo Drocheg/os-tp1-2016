@@ -1,8 +1,9 @@
-#include "database.h"
-#include "dbConn.h"
 #include <comm.h>
 #include <logging.h>
 #include <lib.h>
+#include <sqlite3.h>
+#include <product.h>
+#include <order.h>
 
 #include <time.h>
 #include <stdio.h>

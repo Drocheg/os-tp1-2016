@@ -1,14 +1,14 @@
-HEADERS_COMMON = ../common/config.h ../common/lib.h ../common/product.h ../common/order.h ../logging/logging.h ../database/dbConn.h ../common/comm.h
-OBJECTS_COMMON = ../common/config.o ../common/lib.o ../common/product.o ../common/order.o ../logging/logging.o ../database/dbConn.o
+HEADERS_COMMON = ../common/config.h ../common/lib.h ../common/product.h ../common/order.h ../logging/logging.h ../common/comm.h
+OBJECTS_COMMON = ../common/config.o ../common/lib.o ../common/product.o ../common/order.o ../logging/logging.o 
 
 OBJECTS_SOCKETS = ../common/commWithSockets.o
 OBJECTS_FIFOS = ../common/commWithFIFOs.o
 
-HEADERS_SERVER = forkedServer.h
-OBJECTS_SERVER = mainServer.o forkedServer.o
+HEADERS_SERVER = forkedServer.h dbConn.h
+OBJECTS_SERVER = mainServer.o forkedServer.o dbConn.o
 
 CC = gcc
-CFLAGS = -g -Wall -std=c99 -I ../common -I ../database -I ../logging
+CFLAGS = -g -Wall -std=c99 -I ../common -I ../logging
 
 all: sockets
 

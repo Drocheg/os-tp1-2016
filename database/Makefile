@@ -1,8 +1,8 @@
 HEADERS_COMMON = ../common/config.h ../common/lib.h ../common/product.h ../common/order.h ../logging/logging.h
 OBJECTS_COMMON = ../common/config.o ../common/lib.o ../common/product.o ../common/order.o ../logging/logging.o
 
-HEADERS_DATABASE = SQLite/sqlite3.h dbConn.h database.h
-OBJECTS_DATABASE = SQLite/sqlite3.o dbConn.o
+HEADERS_DATABASE = SQLite/sqlite3.h
+OBJECTS_DATABASE = SQLite/sqlite3.o
 
 HEADERS_SERVER =
 OBJECTS_SERVER = databaseServer.o
