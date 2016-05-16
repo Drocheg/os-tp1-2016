@@ -357,7 +357,7 @@ int main(int argc, char *argv[], char *envp[]) {
     int done = 0;
     do {
         void* clientData = NULL;
-        int s = select_wrapper(inFD + 1, inSelect, NULL, NULL, -1, -1);
+        int s = select_wrapper(inFD + 1, inSelect, 1, NULL, 0, NULL, 0, -1, -1);
         if (s == -1) {
             log_warn("Database select failed. Trying again.");
             continue;

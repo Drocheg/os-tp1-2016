@@ -43,7 +43,7 @@ int ensureWrite(const void *src, size_t bytes, int fd);
  * @param timeoutUSec Max microseconds until timeout, or -1 if infinite.
  * @return int Whatever select() returned.
  */
-int select_wrapper(int maxFD, const int readFDs[], const int writeFDs[], const int errFDs[], int timeoutSec, int timeoutUSec);
+int select_wrapper(int maxFD, const int readFDs[], int rCount, const int writeFDs[], int wCount, const int errFDs[], int eCount, int timeoutSec, int timeoutUSec);
 
 /**
  * Counts the number of digits in the specified number.

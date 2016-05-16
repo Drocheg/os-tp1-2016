@@ -99,7 +99,7 @@ Connection conn_open(const char* address) {
      * with select()
      */
     int fds[1] = {connection->inFD};
-    int selectResult = select_wrapper(connection->inFD+1, fds, NULL, NULL, 10, 0);
+    int selectResult = select_wrapper(connection->inFD+1, fds, 1, NULL, 0, NULL, 0, 10, 0);
     if(selectResult == -1) {  //Error
         //printf("Error with select(). Aborting.\n");
         return NULL;
@@ -181,7 +181,7 @@ ConnectionParams conn_listen(char *listeningAddress) {
 
 Connection conn_accept(ConnectionParams params) {
     int fds[1] = {params->connRequestsFD};
-    int selectResult = select_wrapper(params->connRequestsFD+1, fds, NULL, NULL, -1, -1);
+    int selectResult = select_wrapper(params->connRequestsFD+1, fds, 1, NULL, 0, NULL, 0, -1, -1);
     if (selectResult == -1) {  //Error
         //printf("Error with select(). Aborting.\n");
         return NULL;

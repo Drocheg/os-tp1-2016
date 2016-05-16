@@ -161,10 +161,12 @@ int q1Action(FILE *fp, char *line, Parser parser, Config config) {
 			if (!strcmp(param, parser->actualState->arcs[i]->tag)) {
 				char *value = getValue(line);
 				moveTo(parser, parser->actualState->arcs[i]->next->name);
+				free(param);
 				return parser->actualState->action(fp, value, parser, config);
 			}
 			i++;
 		}
+		free(param);
         return parser->actualState->action(fp, NULL, parser, config);
     } else if(!strcmp(line, "")) {
         return parser->actualState->action(fp, NULL, parser, config);
@@ -402,23 +404,3 @@ static char *getParam(char *line) {
 	memcpy(result, line, i * sizeof(char));
 	return result;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

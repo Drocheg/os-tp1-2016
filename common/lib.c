@@ -35,23 +35,23 @@ int ensureWrite(const void *src, size_t bytes, int fd) {
 	return 1;
 }
 
-int select_wrapper(int maxFD, const int readFDs[], const int writeFDs[], const int errFDs[], int timeoutSec, int timeoutUSec) {
+int select_wrapper(int maxFD, const int readFDs[], int rCount, const int writeFDs[], int wCount, const int errFDs[], int eCount, int timeoutSec, int timeoutUSec) {
     fd_set readSet, writeSet, errSet;
+    FD_ZERO(&readSet);
     if(readFDs != NULL) {
-        FD_ZERO(&readSet);
-        for(int i = 0; i < sizeof(readFDs)/sizeof(readFDs[0]); i++) {
+        for(int i = 0; i < rCount; i++) {
             FD_SET(readFDs[i], &readSet);
         }
     }
+    FD_ZERO(&writeSet);
     if(writeFDs != NULL) {
-        FD_ZERO(&writeSet);
-        for(int i = 0; i < sizeof(writeFDs)/sizeof(writeFDs[0]); i++) {
+        for(int i = 0; i < wCount; i++) {
             FD_SET(writeFDs[i], &writeSet);
         }
     }
+    FD_ZERO(&errSet);
     if(errFDs != NULL) {
-        FD_ZERO(&errSet);
-        for(int i = 0; i < sizeof(errFDs)/sizeof(errFDs[0]); i++) {
+        for(int i = 0; i < eCount; i++) {
             FD_SET(errFDs[i], &errSet);
         }
     }
