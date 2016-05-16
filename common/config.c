@@ -340,7 +340,7 @@ char * leadingTrim(char **str) {
 char * readLine(FILE *fp) {
     
     char *string = NULL;
-    int flag = 0, i = 0, j = 0;
+    int flag = 0, i = 0;
     
     if (fp == NULL) {
         return NULL;
@@ -357,11 +357,7 @@ char * readLine(FILE *fp) {
     
     string = leadingTrim(&string);
     
-    /*if ( (i % BLOCK) != 0) {
-        char *aux = realloc(string, (i - j + 1) * sizeof(char));
-        string = aux;
-    }*/
-    
+       
     return string;
 }
 
