@@ -1,7 +1,7 @@
 #ifndef logger_h
 #define logger_h
 
-typedef struct {        //TODO should this be here? Both server and logging.c need it
+typedef struct {       
     long lvl;
     char msg[256]; //Fixed max message length
 } message_t;
