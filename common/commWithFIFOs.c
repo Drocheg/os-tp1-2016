@@ -241,7 +241,7 @@ static int createProcessFIFOs(const char* basePath, Connection c) {
         return 0;
     }
     sprintf(c->inFIFOPath, "%s-in", basePath);
-    if(mkfifo(c->inFIFOPath, 0666) == -1) {	//0666 == anybody can read and write TODO change?
+    if(mkfifo(c->inFIFOPath, 0666) == -1) {
         //If this fails, it might be because there are leftover FIFOs that weren't erased and the file already exists
         free(c->inFIFOPath);
         return 0;
@@ -251,6 +251,10 @@ static int createProcessFIFOs(const char* basePath, Connection c) {
 
 static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
     int fd = open(mainServerFIFO, O_WRONLY|O_NONBLOCK);    //This will block if the main server isn't reading at the address
+    if(fd == -1) {
+        return 0;
+    }
+    fcntl(fd, F_SETFL, fcntl(fd, F_GETFL)&~O_NONBLOCK);     //Remove nonblocking flag
     int lock = flock(fd, LOCK_EX);
     if(lock != 0) { //Couldn't obtain lock for some bizarre reason
         return 0;
