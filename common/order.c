@@ -16,7 +16,7 @@ struct order_t {
 };
 
 OrderEntry order_get_entry(Order o, int entryNum) {
-    if (entryNum <= 0 || entryNum >= order_get_num_entries(o)) {
+    if (entryNum < 0 || entryNum >= order_get_num_entries(o)) {
         return NULL;
     }
     return o->items[entryNum];
@@ -55,7 +55,7 @@ void order_free(Order o) { //TODO free de address? Cuando le doy espacio?
 float order_get_total(Order order) {
     float result = 0;
     for (int i = 0; i < order->numEntries; i++) {
-        result += 1/*ACA PRECIO*/ * order->items[i]->quantity;   //Aca Diego pone el precio de cada item
+        result += order->items[i]->price * order->items[i]->quantity;
     }
     return result;
 }
@@ -65,7 +65,17 @@ char* order_get_addr(Order order) {
 }
 
 void order_set_addr(Order order, char * address) {
-    order->address = address;
+    if(order->address != NULL) {
+        free(order->address);
+    }
+    if(address == NULL) {
+        order->address = NULL;
+    }
+    else {
+        int len = strlen(address)+1;
+        order->address = malloc(len);
+        strncpy(order->address, address, len);
+    }
 }
 
 int order_get_num_entries(Order order) {
@@ -147,8 +157,16 @@ Order order_unserialize(const void* data) {
     return result;
 }
 
-void order_print(Order order) { //TODO Borrar o hacer bien
-    for (int i = 0; i < order->numEntries; i++) {
-        printf("%i of %i - %i x (id: %i price: %f) \n", i+1, order->numEntries, order->items[i]->quantity, order->items[i]->product_id, order->items[i]->price);
+void order_print(Order order) {
+    printf("-----------------------------------------------------\n");
+    if(order->numEntries == 0) {
+        printf("Empty order (we require more booze!)\n");
     }
+    else {
+        for (int i = 0; i < order->numEntries; i++) {
+            printf("%i of %i\n\tProduct #%i, unit price $%.2f, quantity %i\n", i+1, order->numEntries, order->items[i]->product_id, order->items[i]->price, order->items[i]->quantity);
+        }
+        printf("GRAND TOTAL: $%.2f\n", order_get_total(order));
+    }
+    printf("-----------------------------------------------------\n");
 }

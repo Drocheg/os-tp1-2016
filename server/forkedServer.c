@@ -29,6 +29,7 @@ void forkedServer(Connection c) {
         size_t length;
         conn_receive(c, &clientData, &length);
         int msgCode = *((int*) clientData);
+        printf("Forked server #%i received code %i\n", getpid(), msgCode);
         free(clientData);
         switch (msgCode) {      //TODO use function array?
             case CMD_GET_PRODUCTS:
@@ -56,6 +57,7 @@ void sendProducts(Connection c) {
     if(numProducts == -1) {
         responseCode = MESSAGE_ERROR;
         conn_send(c, &responseCode, sizeof (responseCode));
+        return;
     }
     //Send product count
     conn_send(c, &numProducts, sizeof (numProducts));
@@ -97,6 +99,7 @@ void processOrder(Connection c) {
             ensureRead(serialized, serializedLen, inFD);
             //Send it back
             conn_send(c, serialized, serializedLen); 
+            free(serialized);
     }
     sh_conn_close(dbConn);
 }

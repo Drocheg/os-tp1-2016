@@ -146,9 +146,9 @@ int conn_send(const Connection conn, const void* data, const size_t length) {
 }
 
 int conn_receive(const Connection conn, void** data, size_t* length) {
-    if(length == NULL) {    //If there's nowhere to store the read length, store it within the function, then discard
-        size_t len2;
-        length = &len2;
+    size_t lenAux;
+    if (length == NULL) { //If there's nowhere to store the read length, store it within the function, then discard
+        length = &lenAux;
     }
     if(!ensureRead(length, sizeof(*length), conn->inFD)) {
         return 0;
