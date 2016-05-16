@@ -90,23 +90,6 @@ int stopDBServer() {
 }
 
 /**
- * Starts the logging server.
- * 
- * @return 1 on success, -1 on error.
- */
-int startLoggingServer() {
-    if ((logPID = fork()) == 0) { //Child, start logging server
-        char* unused[1] = {NULL};
-        execve("./loggingDaemon.bin", unused, unused);
-        //If we're here, execve() failed.
-        log_err("execve() failed when starting logging server.");
-        //TODO kill parent
-        exit(-1);
-    }
-    return 1;
-}
-
-/**
  * Shutdown procedure for server before actually ending the process.
  * - TODO send message to forked servers to shut down?
  * - Sends message to database server to shut down.
@@ -116,11 +99,7 @@ static void shut_down() {
         log_warn("Couldn't send shutdown command to database server. Main server shutting down anyway.");
     }
     log_info("Bye-bye from main server.");
-    log_info("Terminating log daemon.");
     sleep(2);   //TODO use waitpid to make sure all child processes are done before killing daemon, they will hang otherwise
-    if(kill(logPID, 2) == -1) { //2 = SIGKILL. TODO where to find a #SIG_INT or something like that?
-        printf("WARNING: Main server couldn't kill log daemon. Falling back to stdout.\n");
-    }
 }
 
 int main(int argc, char *argv[]) {
@@ -130,18 +109,12 @@ int main(int argc, char *argv[]) {
 
 
     int dbOutFD, dbInFD;
-    //Start logging server
-    if(startLoggingServer() == -1) {
-        printf("Couldn't start logging server. Aborting.\n");
-        return -1;
-    }
-    printf("Logging server started with PID #%i\n", logPID);
     //Start database server
     if (startDBServer(&dbOutFD, &dbInFD) == -1) {
         log_err("Main server aborting.");
         return -1;
     }
-    printf("log PID: %i, db PID: %i\n", logPID, dbPID); //TODO remove, for debugging only
+    printf("db PID: %i\n", dbPID); //TODO remove, for debugging only
     char *address = getListeningPort(config);
     remove(address); //Remove it if it was already present (e.g. forcibly closed from a previous run)
     ConnectionParams connParams = conn_listen(address);
