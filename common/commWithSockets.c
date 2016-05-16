@@ -83,8 +83,10 @@ Connection conn_open(const char* address) {
  * @see MESSAGE_CLOSE
  */
 int conn_close(Connection connection) {
+    
+    int message = MESSAGE_CLOSE;
 
-    if (!conn_send(connection, MESSAGE_CLOSE, sizeof (MESSAGE_CLOSE))) {
+    if (!conn_send(connection, &message, sizeof(message))) {
         return 0; /* Couldn't communicate with server to close */
     }
     if (shutdown_wrp(connection->socketfd, SHUT_RDWR)) {
