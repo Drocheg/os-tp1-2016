@@ -12,7 +12,7 @@
 #include <signal.h>
 
 SharedDBConnection dbConn = NULL;
-int dbPID, logPID;
+pid_t dbPID, logPID, mainServerPID;
 
 static int createForkedServer(Connection c) {
     int pid = fork();
@@ -62,7 +62,7 @@ int startDBServer(int* outFD, int* inFD) {
         execve("./databaseServer.bin", args, unused);
         //If we're here, execve() failed.
         log_err("execve() failed when starting database server.");
-        //TODO kill parent
+        kill(mainServerPID, SIGKILL);
         exit(-1);
     }
     return 1;
@@ -104,6 +104,7 @@ int main(int argc, char *argv[]) {
 
 	system("clear");
     Config config = setup();
+    mainServerPID = getpid();
 
 
     int dbOutFD, dbInFD;
