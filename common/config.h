@@ -3,7 +3,7 @@
 
 
 #ifndef CONF_FILE_PATH
-#define CONF_FILE_PATH "/home/parallels/TPSO/config.conf"
+#define CONF_FILE_PATH "/home/juan/tp1so/config.conf"
 #endif
 
 typedef struct config_t * Config;

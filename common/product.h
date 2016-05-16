@@ -12,7 +12,7 @@
 
 typedef struct product_t* Product;
 
-Product newProduct(const char *name, const char *description, const float price, const int stock);
+Product newProduct(int id, const char *name, const char *description, const float price, const int stock);
 
 void freeProduct(Product p);
 
@@ -31,6 +31,15 @@ char *getProductDescription(Product p);
 float getProductPrice(Product p);
 
 int getProductStock(Product p);
+
+/**
+ * Sets the product stock.
+ * 
+ * @param p
+ * @param newStock
+ * @return 1 on success or 0 on error (i.e. negative stock specified)
+ */
+int setProductStock(Product p, int newStock);
 
 #endif /* PRODUCT_H */
 

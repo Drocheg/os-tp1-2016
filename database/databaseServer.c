@@ -29,7 +29,12 @@ sqlite3 *databaseHandle;
  * @see sqlite3_exec
  */
 int run_query(sqlite3* connection, const char* query, databaseCallback callback, void* firstCallbackArgument, char **errorMsgDest) {
-    return sqlite3_exec(connection, query, callback, firstCallbackArgument, errorMsgDest);
+    log_info(query);
+    int result = sqlite3_exec(connection, query, callback, firstCallbackArgument, errorMsgDest);
+    if (result != SQLITE_OK) {
+        log_warn("Last query was not completed successfully.");
+    }
+    return result;
 }
 
 /**
@@ -58,7 +63,7 @@ int append_products(Product *array, int numCols, char **colData, char **colName)
     int i = 0;
     while (array[i] != NULL) //Append to end of array
         i++;
-    array[i] = newProduct(colData[0], colData[1], atof(colData[2]), atoi(colData[3]));
+    array[i] = newProduct(atoi(colData[0]), colData[1], colData[2], atof(colData[3]), atoi(colData[4]));
     return 0;
 }
 
@@ -73,7 +78,6 @@ int get_products(Product **destArray) {
     char *errormsg;
     int numProducts;
     if (run_query(databaseHandle, "SELECT count(id) FROM products", (databaseCallback) store_single_number, &numProducts, &errormsg) != SQLITE_OK) {
-        log_warn("Database error getting product count:");
         log_warn(errormsg);
         sqlite3_free(errormsg);
         return -1;
@@ -82,8 +86,7 @@ int get_products(Product **destArray) {
         return -1;
     }
     *destArray = calloc(numProducts, sizeof (**destArray));
-    if (run_query(databaseHandle, "SELECT name, description, price, quantity FROM products", (databaseCallback) append_products, *destArray, &errormsg) != SQLITE_OK) {
-        log_warn("Database error getting products:");
+    if (run_query(databaseHandle, "SELECT id, name, description, price, quantity FROM products", (databaseCallback) append_products, *destArray, &errormsg) != SQLITE_OK) {
         log_warn(errormsg);
         sqlite3_free(errormsg);
         return -1;
@@ -110,11 +113,11 @@ void send_products(int outFD) {
     for (int i = 0; i < numProds; i++) {
         void* serialized;
         size_t serializedLen = serializeProduct(prods[i], &serialized);
-        ensureWrite(&serializedLen, sizeof(serializedLen), outFD);
+        ensureWrite(&serializedLen, sizeof (serializedLen), outFD);
         ensureWrite(serialized, serializedLen, outFD);
         free(serialized);
     }
-    for(int i = 0; i < numProds; i++) {
+    for (int i = 0; i < numProds; i++) {
         free(prods[i]);
     }
     free(prods);
@@ -127,8 +130,6 @@ int get_stock(int productId) {
     char *err;
     snprintf(query, sizeof (query), "%s%i", baseQuery, productId);
     if (run_query(databaseHandle, query, (databaseCallback) store_single_number, &result, &err) != SQLITE_OK) {
-        log_warn("Database error getting product stock:");
-        log_warn(err);
         sqlite3_free(err);
         return -1;
     }
@@ -155,9 +156,9 @@ sqlite3_int64 store_verified_order(Order o) {
     sprintf(query, "%s", baseQuery);
     index += strlen(baseQuery);
     sprintf(query + index, "%.2f,", order_get_total(o));
-    index += countDigits((int) order_get_total(o) + 1 + 2 + 1); //int digits + . + 2 decimal places + ,
-    sprintf(query + index, "'%s',", order_get_addr(o));
-    index += strlen(1 + order_get_addr(o) + 2); //' + address + ',
+    index += countDigits((int) order_get_total(o)) + 1 + 2 + 1; //int digits + . + 2 decimal places + ,
+    sprintf(query + index, "\"%s\",", order_get_addr(o));
+    index += 1 + strlen(order_get_addr(o)) + 1 + 1; //" + address + " + ,
     sprintf(query + index, "%li)", timestamp); //TODO not portable
     index += countDigits(timestamp) + 1; //time + )
     query[index] = 0;
@@ -176,11 +177,11 @@ sqlite3_int64 store_verified_order(Order o) {
         sprintf(query, "%s", baseQuery);
         index += strlen(baseQuery);
         sprintf(query + index, "%lli,", orderID); //TODO not portable
-        index += countDigits(orderID + 1); //orderID + ,
+        index += countDigits(orderID) + 1; //orderID + ,
         sprintf(query + index, "%i,", orderentry_get_id(e));
-        index += countDigits(orderentry_get_id(e) + 1); //productID + ,
+        index += countDigits(orderentry_get_id(e)) + 1; //productID + ,
         sprintf(query + index, "%i)", orderentry_get_quantity(e));
-        index += countDigits(orderentry_get_quantity(e) + 1); //productQuantity + )
+        index += countDigits(orderentry_get_quantity(e)) + 1; //productQuantity + )
         query[index] = 0;
         if (run_query(databaseHandle, query, NULL, NULL, &err) != SQLITE_OK) {
             log_warn("Couldn't store verified order entry:");
@@ -210,7 +211,6 @@ int update_stock(Order o) {
         OrderEntry e = order_get_entry(o, i);
         sprintf(query, "UPDATE products SET quantity=quantity-%i WHERE id=%i", orderentry_get_quantity(e), orderentry_get_id(e));
         if (run_query(databaseHandle, query, NULL, NULL, &err) != SQLITE_OK) {
-            log_warn("Couldn't update stock:");
             log_warn(err);
             sqlite3_free(err);
             return -1;
@@ -220,20 +220,19 @@ int update_stock(Order o) {
 }
 
 /**
- * Validates a received order. If the order can't be satisfied, sends the
- * biggest sub-order that can be satisfied at the time.
+ * Verifies that there is enough stock to meet the specified order. If there is
+ * not enough stock for any item in the order, its order entry is updated to
+ * the current stock.
+ * 
+ * @param o The order to verify. <b>Note: </b> Will be modified if unsatisfiable.
+ * @return 1 if the order was verified, 0 otherwise. In this case, order will be
+ * modified to represent the largest subset of the order that can be satisfied.
  */
-void place_order(int inFD, int outFD) {
+int verifyOrderStock(Order *o) {
     int satisfied = 1;
-    size_t serializedSize;
-    ensureRead(&serializedSize, sizeof (serializedSize), inFD);
-    char *serialized = malloc(serializedSize);
-    ensureRead(serialized, serializedSize, inFD);
-    Order order = order_unserialize(serialized);
-    free(serialized);
     //Verify that every item quantity has enough stock
-    for (int i = 0; i < order_get_num_entries(order); i++) {
-        OrderEntry e = order_get_entry(order, i);
+    for (int i = 0; i < order_get_num_entries(o); i++) {
+        OrderEntry e = order_get_entry(o, i);
         int quantity = orderentry_get_quantity(e),
                 stock = get_stock(orderentry_get_id(e));
         if (stock < quantity) {
@@ -241,21 +240,67 @@ void place_order(int inFD, int outFD) {
             orderentry_set_quantity(e, stock);
         }
     }
-    int responseCode = satisfied ? MESSAGE_OK : MESSAGE_UNSATISFIABLE_ORDER;
-    if (satisfied) {
-        if (store_verified_order(order) == -1 || update_stock(order)) {
+    return satisfied;
+}
+
+/**
+ * Validates a received order. If the order can't be satisfied, sends the
+ * biggest sub-order that can be satisfied at the time.
+ */
+void place_order(int inFD, int outFD) {
+    size_t serializedSize;
+    ensureRead(&serializedSize, sizeof (serializedSize), inFD);
+    void *serialized = malloc(serializedSize);
+    ensureRead(serialized, serializedSize, inFD);
+    Order order = order_unserialize(serialized);
+    free(serialized);
+    int satisfiable = verifyOrderStock(&order);
+    int responseCode;
+    if (satisfiable) {
+        if (store_verified_order(order) == -1 || update_stock(order) == -1) {
             responseCode = MESSAGE_ERROR;
+            log_warn("Database error verifying order.");
         } else {
+            responseCode = MESSAGE_OK;
             log_info("Order placed successfully.");
         }
         ensureWrite(&responseCode, sizeof (responseCode), outFD);
     } else { //Couldn't satisfy, send largest satisfiable sub-order
+        responseCode = MESSAGE_UNSATISFIABLE_ORDER;
         ensureWrite(&responseCode, sizeof (responseCode), outFD);
         serializedSize = order_serialize(order, (void **) &serialized);
         ensureWrite(&serializedSize, sizeof (serializedSize), outFD);
         ensureWrite(serialized, serializedSize, outFD);
         log_info("Received unsatisfiable order, replied with biggest satisfiable sub-order.");
+        free(serialized);
     }
+}
+
+/**
+ * Initializes the database with default values.
+ * 
+ * @return 1 if there were no errors with any of the queries, 0 otherwise. Note
+ * that 0 is not fatal; some records might already exist, for example.
+ */
+int init() {
+    int result = 1;
+    char* queries[] = {"CREATE TABLE IF NOT EXISTS products(id INTEGER PRIMARY KEY NOT NULL, name TEXT NOT NULL, quantity INTEGER NOT NULL DEFAULT 0 check(quantity >= 0), price FLOAT NOT NULL, description TEXT);",
+        "CREATE TABLE IF NOT EXISTS orders(id INTEGER PRIMARY KEY NOT NULL, total FLOAT NOT NULL, address TEXT, `time` INTEGER NOT NULL);",
+        "CREATE TABLE IF NOT EXISTS orderEntry(id INTEGER PRIMARY KEY NOT NULL, order_id INTEGER NOT NULL, product_id INTEGER NOT NULL, quantity INTEGER NOT NULL DEFAULT 1, FOREIGN KEY (order_id) REFERENCES orders(id), FOREIGN KEY (product_id) REFERENCES products(id));",
+        "INSERT INTO products VALUES(1, \"Vodka\", 60, 30.5, \"A Russian favourite imported from the heart of the coldest place on Earth, Serbia\");",
+        "INSERT INTO products VALUES(2, \"Gin\", 30, 40, \"A Dutch favourite\");",
+        "INSERT INTO products VALUES(3, \"Chianti\", 40, 90, \"Aged wine imported from the cuore of Tuscany, Italy\");",
+        "INSERT INTO products VALUES(4, \"Fernet\", 100, 25, \"Want to get drunk at a pregame with your amigos? Nothing beats the terrible hangover that Fernet gives you\");",
+        "INSERT INTO products VALUES(5, \"Quilmes\", 200, 20, \"You aren't Argentine until you've drunk Quilmes, the most famous beer in la Tierra de la Plata\");"};
+    char* err;
+    for (int i = 0; i < sizeof (queries) / sizeof (queries[0]); i++) {
+        if (run_query(databaseHandle, queries[i], NULL, NULL, &err) != SQLITE_OK) {
+            log_warn(err);
+            sqlite3_free(err);
+            result = 0;
+        }
+    }
+    return result;
 }
 
 void shut_down(int outFD, int inFD) {
@@ -300,12 +345,14 @@ int main(int argc, char *argv[], char *envp[]) {
         log_err("Database server aborting.");
         return 0;
     }
+    if (!init()) {
+        log_warn("Database initialized with errors.");
+    }
     //Main loop
-    log_info("This is database server, waiting for requests...\n");
+    log_info("This is database server, waiting for requests...");
     int done = 0;
     do {
         void* clientData = NULL;
-        size_t msgLength;
         int s = select_wrapper(inFD + 1, inSelect, NULL, NULL, -1, -1);
         if (s == -1) {
             log_warn("Database select failed. Trying again.");
@@ -316,9 +363,11 @@ int main(int argc, char *argv[], char *envp[]) {
         ensureRead(&msgCode, sizeof (msgCode), inFD);
         switch (msgCode) {
             case CMD_GET_PRODUCTS:
+                log_info("Database server sending back products");
                 send_products(outFD);
                 break;
             case CMD_PLACE_ORDER:
+                log_info("Database server placing order");
                 place_order(inFD, outFD);
                 break;
             case MESSAGE_CLOSE:

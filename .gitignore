@@ -13,7 +13,7 @@ CMakeLists.txt
 netbeans/*
 Flowchart.vsdx
 docs/SQLite/*
-
+testing/*
 
 # Object files
 *.o
