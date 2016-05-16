@@ -10,7 +10,7 @@
 #include <signal.h>
 #include "logging.h"
 
-volatile int msqid; //TODO borrar volatile si no hace falta -- está para que el compilador no la cachee (http://stackoverflow.com/questions/246127/why-is-volatile-needed-in-c)
+int msqid; 
              
 const char* LevelNames[] = {"INFO", "WARNING", "ERROR"};
 
