@@ -50,7 +50,7 @@ int startDBServer(int* outFD, int* inFD) {
         log_err("Main server couldn't create shared connection.");
         return -1;
     }
-    printf("OUT read: %i, write: %i\nIN read: %i, write: %i\n", outpipe[0], outpipe[1], inpipe[0], inpipe[1]);
+    
     //Shared connection set up, fork and start database
     if ((dbPID = fork()) == 0) { //Child, start database server
         char dbReadFD[countDigits(outpipe[0]) + 1],
@@ -82,27 +82,22 @@ int stopDBServer() {
     if(writeResult) {
         dbConn = NULL;
     }
-    sleep(1);   //TODO do waitpid or something 
     sh_conn_destroy(dbConn);
     return writeResult ? 1 : -1;
 }
 
 /**
- * Shutdown procedure for server before actually ending the process.
- * - TODO send message to forked servers to shut down?
- * - Sends message to database server to shut down.
+ * Shutdown procedure for server before actually ending the process. Sends
+ * message to database server to shut down.
  */
 static void shut_down() {
     if(stopDBServer() == -1) {
         log_warn("Couldn't send shutdown command to database server. Main server shutting down anyway.");
     }
-    log_info("Bye-bye from main server.");
-    sleep(2);   //TODO use waitpid to make sure all child processes are done before killing daemon, they will hang otherwise
+    log_info("Bye-bye from main server.");    
 }
 
 int main(int argc, char *argv[]) {
-
-	system("clear");
     Config config = setup();
     mainServerPID = getpid();
 
@@ -113,7 +108,6 @@ int main(int argc, char *argv[]) {
         log_err("Main server aborting.");
         return -1;
     }
-    printf("db PID: %i\n", dbPID); //TODO remove, for debugging only
     char *address = getListeningPort(config);
     remove(address); //Remove it if it was already present (e.g. forcibly closed from a previous run)
     ConnectionParams connParams = conn_listen(address);

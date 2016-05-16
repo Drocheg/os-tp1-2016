@@ -160,7 +160,7 @@ sqlite3_int64 store_verified_order(Order o) {
     index += countDigits((int) orderGetTotal(o)) + 1 + 2 + 1; //int digits + . + 2 decimal places + ,
     sprintf(query + index, "\"%s\",", orderGetAddress(o));
     index += 1 + strlen(orderGetAddress(o)) + 1 + 1; //" + address + " + ,
-    sprintf(query + index, "%li)", timestamp); //TODO not portable
+    sprintf(query + index, "%li)", timestamp); 
     index += countDigits(timestamp) + 1; //time + )
     query[index] = 0;
     if (run_query(databaseHandle, query, NULL, NULL, &err) != SQLITE_OK) {
@@ -177,7 +177,7 @@ sqlite3_int64 store_verified_order(Order o) {
         index = 0;
         sprintf(query, "%s", baseQuery);
         index += strlen(baseQuery);
-        sprintf(query + index, "%lli,", orderID); //TODO not portable
+        sprintf(query + index, "%lli,", orderID);
         index += countDigits(orderID) + 1; //orderID + ,
         sprintf(query + index, "%i,", orderEntryGetId(e));
         index += countDigits(orderEntryGetId(e)) + 1; //productID + ,
@@ -357,7 +357,7 @@ int main(int argc, char *argv[], char *envp[]) {
     int done = 0;
     do {
         void* clientData = NULL;
-        int s = select_wrapper(inFD + 1, inSelect, NULL, NULL, -1, -1);
+        int s = select_wrapper(inFD + 1, inSelect, 1, NULL, 0, NULL, 0, -1, -1);
         if (s == -1) {
             log_warn("Database select failed. Trying again.");
             continue;

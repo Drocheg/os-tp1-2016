@@ -16,11 +16,13 @@ struct product_t {
 
 Product productNew(int id, const char *name, const char *description, const float price, const int stock) {
     Product result = malloc(sizeof (*result));
+    size_t nameSize = strlen(name)+1,
+            descrSize = strlen(description)+1;
     result->id = id;
-    result->name = malloc(strlen(name) + 1);
-    strcpy(result->name, name); // TODO NetBeans suggests using strncpy to prevent buffer overflow
-    result->description = malloc(strlen(description) + 1);
-    strcpy(result->description, description); // TODO NetBeans suggests using strncpy to prevent buffer overflow
+    result->name = malloc(nameSize);
+    strncpy(result->name, name, nameSize);
+    result->description = malloc(descrSize);
+    strncpy(result->description, description, descrSize);
     result->price = price;
     result->stock = stock;
     return result;
@@ -37,7 +39,6 @@ void productPrint(Product p) {
 }
 
 size_t productSerialize(const Product p, void **dest) {
-    //TODO check for errors and return NULL
     int offset = 0;
     int nameLen = strlen(p->name) + 1;
     int descrLen = strlen(p->description) + 1;
@@ -51,7 +52,7 @@ size_t productSerialize(const Product p, void **dest) {
     offset += nameLen;
     memcpy(*dest + offset, &descrLen, sizeof (descrLen));
     offset += sizeof (descrLen);
-    strcpy(*dest + offset, p->description);
+    memcpy(*dest + offset, p->description, descrLen);
     offset += descrLen;
     memcpy(*dest + offset, &(p->price), sizeof (p->price));
     offset += sizeof (p->price);
@@ -60,7 +61,6 @@ size_t productSerialize(const Product p, void **dest) {
 }
 
 Product productUnserialize(const void* data) {
-    //TODO check for errors and return NULL
     Product result = malloc(sizeof (*result));
     int nameLen, descrLen, offset = 0;
     memcpy(&(result->id), data + offset, sizeof (result->id));
@@ -68,12 +68,12 @@ Product productUnserialize(const void* data) {
     memcpy(&nameLen, data + offset, sizeof (nameLen));
     offset += sizeof (nameLen);
     result->name = malloc(nameLen);
-    strcpy(result->name, data + offset);
+    memcpy(result->name, data + offset, nameLen);
     offset += nameLen;
     memcpy(&descrLen, data + offset, sizeof (descrLen));
     offset += sizeof (descrLen);
     result->description = malloc(descrLen);
-    strcpy(result->description, data + offset);
+    memcpy(result->description, data + offset, descrLen);
     offset += descrLen;
     memcpy(&(result->price), data + offset, sizeof (result->price));
     offset += sizeof (result->price);

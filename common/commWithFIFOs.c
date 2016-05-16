@@ -78,7 +78,7 @@ Connection conn_open(const char* address) {
     char buff[5+countDigits(pid)+1];    // "/tmp/" + pid + \0
     sprintf(buff, "/tmp/%i", pid);
     if(!createProcessFIFOs(buff, connection)) {
-        printf("Couldn't create connection FIFOs for process #%i\n", pid);
+        //printf("Couldn't create connection FIFOs for process #%i\n", pid);
         return NULL;
     }
     
@@ -88,7 +88,7 @@ Connection conn_open(const char* address) {
     
     //Step 3
     if(!sendFIFOPaths(connection, address)) {
-        printf("Couldn't send FIFO information to main server for process #%i\n", pid);
+        //printf("Couldn't send FIFO information to main server for process #%i\n", pid);
         return NULL;
     }
     
@@ -99,19 +99,19 @@ Connection conn_open(const char* address) {
      * with select()
      */
     int fds[1] = {connection->inFD};
-    int selectResult = select_wrapper(connection->inFD+1, fds, NULL, NULL, 10, 0);
+    int selectResult = select_wrapper(connection->inFD+1, fds, 1, NULL, 0, NULL, 0, 10, 0);
     if(selectResult == -1) {  //Error
-        printf("Error with select(). Aborting.\n");
+        //printf("Error with select(). Aborting.\n");
         return NULL;
     }
     else if(selectResult == 0) {    //Timed out
-        printf("Timed out. Aborting.\n");
+        //printf("Timed out. Aborting.\n");
         return NULL;
     }
     //Else, FIFO is open and with data
     char *ack;
     if(conn_receive(connection, (void **)&ack, NULL) == 0) {
-        printf("conn_receive failed. Aborting.\n");
+        //printf("conn_receive failed. Aborting.\n");
         return NULL;
     }
     int code = *(int *)(ack);
@@ -121,7 +121,7 @@ Connection conn_open(const char* address) {
     	return connection;
     }
     else {
-    	printf("Error, received something else: %i\nAborting.\n", code);
+    	//printf("Error, received something else: %i\nAborting.\n", code);
     	return NULL;
     }
 }
@@ -163,18 +163,16 @@ int conn_receive(const Connection conn, void** data, size_t* length) {
     return 1;
 }
 
-//TODO make this open the file if it existed rather than removing it.
-//That way clients can be started before the server.
 ConnectionParams conn_listen(char *listeningAddress) {
     //Create FIFO where process will listen for connection requests
-    if(mkfifo(listeningAddress, 0666) == -1) {    //0666 == anybody can read and write TODO change?
-        printf("Error creating connection FIFOs for process #%i.\n", getpid());
+    if(mkfifo(listeningAddress, 0666) == -1) {
+        //printf("Error creating connection FIFOs for process #%i.\n", getpid());
         return NULL;
     }
     ConnectionParams p = malloc(sizeof(*p));
     int fd = open(listeningAddress, O_RDONLY|O_NONBLOCK);           // Open in non-blocking read mode to prevent blocking, but remove flag immediately after
     if(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL)&~O_NONBLOCK) == -1) {  // Remove nonblocking flag, we want reads to be blocking later
-        printf("Couldn't open requests file in non-blocking mode for process #%i\n", getpid());
+        //printf("Couldn't open requests file in non-blocking mode for process #%i\n", getpid());
         return NULL;
     }
     p->connRequestsFD = fd;
@@ -183,14 +181,11 @@ ConnectionParams conn_listen(char *listeningAddress) {
 
 Connection conn_accept(ConnectionParams params) {
     int fds[1] = {params->connRequestsFD};
-    int selectResult = select_wrapper(params->connRequestsFD+1, fds, NULL, NULL, -1, -1);
+    int selectResult = select_wrapper(params->connRequestsFD+1, fds, 1, NULL, 0, NULL, 0, -1, -1);
     if (selectResult == -1) {  //Error
-        printf("Error with select(). Aborting.\n");
+        //printf("Error with select(). Aborting.\n");
         return NULL;
     }
-//    else if(selectResult == 0) {    //Timed out
-//        return NULL;    //TODO remove timeout? NULL is returned for errors
-//    }
     else {
         Connection c = malloc(sizeof(*c));
         /*
@@ -231,7 +226,7 @@ static int createProcessFIFOs(const char* basePath, Connection c) {
         return 0;
     }
     sprintf(c->outFIFOPath, "%s-out", basePath);
-    if(mkfifo(c->outFIFOPath, 0666) == -1) {	//0666 == anybody can read and write TODO change?
+    if(mkfifo(c->outFIFOPath, 0666) == -1) {
         //If this fails, it might be because there are leftover FIFOs that weren't erased and the file already exists
         free(c->outFIFOPath);
         return 0;
@@ -261,7 +256,7 @@ static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
     }
     size_t len = strlen(c->outFIFOPath)+1;
     if(!ensureWrite(&len, sizeof(len), fd) || !ensureWrite(c->outFIFOPath, len, fd)) {
-        close(fd);  //TODO should this be here? And below, too
+        close(fd);
         return 0;
     }
     len = strlen(c->inFIFOPath)+1;
