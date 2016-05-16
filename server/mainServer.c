@@ -97,7 +97,7 @@ static void shut_down() {
         log_warn("Couldn't send shutdown command to database server. Main server shutting down anyway.");
     }
     log_info("Bye-bye from main server.");
-    sleep(2);   //TODO use waitpid to make sure all child processes are done before killing daemon, they will hang otherwise
+     
 }
 
 int main(int argc, char *argv[]) {

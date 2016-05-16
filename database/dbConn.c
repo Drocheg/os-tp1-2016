@@ -51,6 +51,7 @@ SharedDBConnection sh_conn_create(int outFD, int inFD) {
 }
 
 int sh_conn_destroy(SharedDBConnection c) {
+    sh_conn_open(c); //Obtain the mutex, will block until it is available
     if (close(c->outFD) == -1) {
         return 0;
     }
@@ -60,6 +61,7 @@ int sh_conn_destroy(SharedDBConnection c) {
     if (shm_unlink(sharedMemPath) < 0) {
         return 0;
     }
+    //Don't bother closing the shared connection, we just destoyed it
     return 1;
 }
 
