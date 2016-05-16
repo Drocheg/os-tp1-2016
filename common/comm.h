@@ -18,14 +18,11 @@ typedef struct conn_params_t* ConnectionParams;
  * Standard messages to communicate different statuses or actions.
  */
 #define MESSAGE_OK 1
-#define MESSAGE_ERROR -1
 #define MESSAGE_CLOSE 2
+#define CMD_GET_PRODUCTS 3
+#define CMD_PLACE_ORDER 4
+#define MESSAGE_ERROR -1
 #define MESSAGE_UNSATISFIABLE_ORDER -2
-#define MESSAGE_BUY "GIMMEDIS"
-#define MESSAGE_LIST_START "WHATCHUGOT"
-#define CMD_GET_PRODUCTS 42
-#define CMD_PLACE_ORDER 43
-#define CMD_NO_OP 12345
 
 
 /*

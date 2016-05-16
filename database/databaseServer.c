@@ -64,7 +64,7 @@ int append_products(Product *array, int numCols, char **colData, char **colName)
     int i = 0;
     while (array[i] != NULL) //Append to end of array
         i++;
-    array[i] = newProduct(atoi(colData[0]), colData[1], colData[2], atof(colData[3]), atoi(colData[4]));
+    array[i] = productNew(atoi(colData[0]), colData[1], colData[2], atof(colData[3]), atoi(colData[4]));
     return 0;
 }
 
@@ -113,7 +113,7 @@ void send_products(int outFD) {
     ensureWrite(&numProds, sizeof (numProds), outFD);
     for (int i = 0; i < numProds; i++) {
         void* serialized;
-        size_t serializedLen = serializeProduct(prods[i], &serialized);
+        size_t serializedLen = productSerialize(prods[i], &serialized);
         ensureWrite(&serializedLen, sizeof (serializedLen), outFD);
         ensureWrite(serialized, serializedLen, outFD);
         free(serialized);
@@ -156,10 +156,10 @@ sqlite3_int64 store_verified_order(Order o) {
     char *baseQuery = "INSERT INTO orders (total, address, `time`) VALUES (";
     sprintf(query, "%s", baseQuery);
     index += strlen(baseQuery);
-    sprintf(query + index, "%.2f,", order_get_total(o));
-    index += countDigits((int) order_get_total(o)) + 1 + 2 + 1; //int digits + . + 2 decimal places + ,
-    sprintf(query + index, "\"%s\",", order_get_addr(o));
-    index += 1 + strlen(order_get_addr(o)) + 1 + 1; //" + address + " + ,
+    sprintf(query + index, "%.2f,", orderGetTotal(o));
+    index += countDigits((int) orderGetTotal(o)) + 1 + 2 + 1; //int digits + . + 2 decimal places + ,
+    sprintf(query + index, "\"%s\",", orderGetAddress(o));
+    index += 1 + strlen(orderGetAddress(o)) + 1 + 1; //" + address + " + ,
     sprintf(query + index, "%li)", timestamp); //TODO not portable
     index += countDigits(timestamp) + 1; //time + )
     query[index] = 0;
@@ -172,17 +172,17 @@ sqlite3_int64 store_verified_order(Order o) {
     sqlite3_int64 orderID = sqlite3_last_insert_rowid(databaseHandle);
     //Now insert all the order's entries
     baseQuery = "INSERT INTO orderEntry (order_id, product_id, quantity) VALUES (";
-    for (int i = 0; i < order_get_num_entries(o); i++) {
-        OrderEntry e = order_get_entry(o, i);
+    for (int i = 0; i < orderGetNumEntries(o); i++) {
+        OrderEntry e = orderGetEntryNum(o, i);
         index = 0;
         sprintf(query, "%s", baseQuery);
         index += strlen(baseQuery);
         sprintf(query + index, "%lli,", orderID); //TODO not portable
         index += countDigits(orderID) + 1; //orderID + ,
-        sprintf(query + index, "%i,", orderentry_get_id(e));
-        index += countDigits(orderentry_get_id(e)) + 1; //productID + ,
-        sprintf(query + index, "%i)", orderentry_get_quantity(e));
-        index += countDigits(orderentry_get_quantity(e)) + 1; //productQuantity + )
+        sprintf(query + index, "%i,", orderEntryGetId(e));
+        index += countDigits(orderEntryGetId(e)) + 1; //productID + ,
+        sprintf(query + index, "%i)", orderEntryGetQuantity(e));
+        index += countDigits(orderEntryGetQuantity(e)) + 1; //productQuantity + )
         query[index] = 0;
         if (run_query(databaseHandle, query, NULL, NULL, &err) != SQLITE_OK) {
             log_warn("Couldn't store verified order entry:");
@@ -208,9 +208,9 @@ sqlite3_int64 store_verified_order(Order o) {
 int update_stock(Order o) {
     char *err;
     char query[1024];
-    for (int i = 0; i < order_get_num_entries(o); i++) {
-        OrderEntry e = order_get_entry(o, i);
-        sprintf(query, "UPDATE products SET quantity=quantity-%i WHERE id=%i", orderentry_get_quantity(e), orderentry_get_id(e));
+    for (int i = 0; i < orderGetNumEntries(o); i++) {
+        OrderEntry e = orderGetEntryNum(o, i);
+        sprintf(query, "UPDATE products SET quantity=quantity-%i WHERE id=%i", orderEntryGetQuantity(e), orderEntryGetId(e));
         if (run_query(databaseHandle, query, NULL, NULL, &err) != SQLITE_OK) {
             log_warn(err);
             sqlite3_free(err);
@@ -233,13 +233,13 @@ int verifyOrderStock(Order *o) {
     int satisfied = 1;
     log_info("Database server verifying order.");
     //Verify that every item quantity has enough stock
-    for (int i = 0; i < order_get_num_entries(*o); i++) {
-        OrderEntry e = order_get_entry(*o, i);
-        int quantity = orderentry_get_quantity(e),
-                stock = get_stock(orderentry_get_id(e));
+    for (int i = 0; i < orderGetNumEntries(*o); i++) {
+        OrderEntry e = orderGetEntryNum(*o, i);
+        int quantity = orderEntryGetQuantity(e),
+                stock = get_stock(orderEntryGetId(e));
         if (stock < quantity) {
             satisfied = 0;
-            orderentry_set_quantity(e, stock);
+            orderEntrySetQuantity(e, stock);
         }
     }
     log_info(satisfied ? "Order verified." : "Unsatisfiable order, updated order.");
@@ -255,7 +255,7 @@ void place_order(int inFD, int outFD) {
     ensureRead(&serializedSize, sizeof (serializedSize), inFD);
     void *serialized = malloc(serializedSize);
     ensureRead(serialized, serializedSize, inFD);
-    Order order = order_unserialize(serialized);
+    Order order = orderUnserialize(serialized);
     free(serialized);
     int satisfiable = verifyOrderStock(&order);
     int responseCode;
@@ -271,7 +271,7 @@ void place_order(int inFD, int outFD) {
     } else { //Couldn't satisfy, send largest satisfiable sub-order
         responseCode = MESSAGE_UNSATISFIABLE_ORDER;
         ensureWrite(&responseCode, sizeof (responseCode), outFD);
-        serializedSize = order_serialize(order, (void **) &serialized);
+        serializedSize = orderSerialize(order, (void **) &serialized);
         ensureWrite(&serializedSize, sizeof (serializedSize), outFD);
         ensureWrite(serialized, serializedSize, outFD);
         log_info("Received unsatisfiable order, replied with biggest satisfiable sub-order.");

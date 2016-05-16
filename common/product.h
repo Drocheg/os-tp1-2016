@@ -1,10 +1,3 @@
-/* 
- * File:   product.h
- * Author: jlipumafinnemore
- *
- * Created on 26 de abril de 2016, 10:59
- */
-
 #ifndef PRODUCT_H
 #define PRODUCT_H
 
@@ -12,25 +5,25 @@
 
 typedef struct product_t* Product;
 
-Product newProduct(int id, const char *name, const char *description, const float price, const int stock);
+Product productNew(int id, const char *name, const char *description, const float price, const int stock);
 
-void freeProduct(Product p);
+void productFree(Product p);
 
-void prettyPrintProduct(Product p);
+void productPrint(Product p);
 
-size_t serializeProduct(const Product p, void **dest);
+size_t productSerialize(const Product p, void **dest);
 
-Product unserializeProduct(const void* data);
+Product productUnserialize(const void* data);
 
-int getProductId(Product p);
+int productGetId(Product p);
 
-char *getProductName(Product p);
+char *productGetName(Product p);
 
-char *getProductDescription(Product p);
+char *productGetDescription(Product p);
 
-float getProductPrice(Product p);
+float productGetPrice(Product p);
 
-int getProductStock(Product p);
+int productGetStock(Product p);
 
 /**
  * Sets the product stock.
@@ -39,7 +32,7 @@ int getProductStock(Product p);
  * @param newStock
  * @return 1 on success or 0 on error (i.e. negative stock specified)
  */
-int setProductStock(Product p, int newStock);
+int productSetStock(Product p, int newStock);
 
 #endif /* PRODUCT_H */
 

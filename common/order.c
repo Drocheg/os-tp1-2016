@@ -15,30 +15,30 @@ struct order_t {
     OrderEntry *items;
 };
 
-OrderEntry order_get_entry(Order o, int entryNum) {
-    if (entryNum < 0 || entryNum >= order_get_num_entries(o)) {
+OrderEntry orderGetEntryNum(Order o, int entryNum) {
+    if (entryNum < 0 || entryNum >= orderGetNumEntries(o)) {
         return NULL;
     }
     return o->items[entryNum];
 }
 
-int orderentry_get_id(OrderEntry e) {
+int orderEntryGetId(OrderEntry e) {
     return e->product_id;
 }
 
-void orderentry_set_quantity(OrderEntry e, int newQuantity) {
+void orderEntrySetQuantity(OrderEntry e, int newQuantity) {
     e->quantity = newQuantity;
 }
 
-int orderentry_get_quantity(OrderEntry e) {
+int orderEntryGetQuantity(OrderEntry e) {
     return e->quantity;
 }
 
-float orderentry_price(OrderEntry e) {
+float orderEntryGetPrice(OrderEntry e) {
     return e->price;
 }
 
-Order order_new() {
+Order orderNew() {
     Order order = malloc(sizeof (*order));
     order->numEntries = 0;
     order->address = NULL;
@@ -46,7 +46,7 @@ Order order_new() {
     return order;
 }
 
-void order_free(Order o) { //TODO free de address? Cuando le doy espacio? 
+void orderFree(Order o) { //TODO free de address? Cuando le doy espacio? 
     for (int i = 0; i < o->numEntries; i++) {
         if(o->items[i] != NULL) {
             free(o->items[i]);
@@ -55,7 +55,7 @@ void order_free(Order o) { //TODO free de address? Cuando le doy espacio?
     free(o);
 }
 
-float order_get_total(Order order) {
+float orderGetTotal(Order order) {
     float result = 0;
     for (int i = 0; i < order->numEntries; i++) {
         result += order->items[i]->price * order->items[i]->quantity;
@@ -63,11 +63,11 @@ float order_get_total(Order order) {
     return result;
 }
 
-char* order_get_addr(Order order) {
+char* orderGetAddress(Order order) {
     return order->address;
 }
 
-void order_set_addr(Order order, char * address) {
+void orderSetAddress(Order order, char * address) {
     if(order->address != NULL) {
         free(order->address);
     }
@@ -81,11 +81,11 @@ void order_set_addr(Order order, char * address) {
     }
 }
 
-int order_get_num_entries(Order order) {
+int orderGetNumEntries(Order order) {
     return order->numEntries;
 }
 
-int order_add(Order order, int product_id, int quantity, float price) {
+int orderAdd(Order order, int product_id, int quantity, float price) {
     int i = 0;
     for (i = 0; i < order->numEntries; i++) {
         if (product_id == order->items[i]->product_id) {
@@ -106,7 +106,7 @@ int order_add(Order order, int product_id, int quantity, float price) {
     return 0;
 }
 
-size_t order_serialize(const Order o, void **dest) {
+size_t orderSerialize(const Order o, void **dest) {
     //TODO check for errors and return NULL
     int offset = 0;
     size_t addressLen = o->address == NULL ? 0 : strlen(o->address) + 1;
@@ -131,9 +131,9 @@ size_t order_serialize(const Order o, void **dest) {
     return totalLen;
 }
 
-Order order_unserialize(const void* data) {
+Order orderUnserialize(const void* data) {
     //TODO check for errors and return NULL
-    Order result = order_new();
+    Order result = orderNew();
     size_t addressLen = -1;
     int offset = 0;
     memcpy(&addressLen, data + offset, sizeof (addressLen));
@@ -157,7 +157,7 @@ Order order_unserialize(const void* data) {
     return result;
 }
 
-void order_print(Order order) {
+void orderPrint(Order order) {
     printf("-----------------------------------------------------\n");
     if(order->numEntries == 0) {
         printf("Empty order (we require more booze!)\n");
@@ -166,7 +166,7 @@ void order_print(Order order) {
         for (int i = 0; i < order->numEntries; i++) {
             printf("%i of %i\n\tProduct #%i, unit price $%.2f, quantity %i\n", i+1, order->numEntries, order->items[i]->product_id, order->items[i]->price, order->items[i]->quantity);
         }
-        printf("GRAND TOTAL: $%.2f\n", order_get_total(order));
+        printf("GRAND TOTAL: $%.2f\n", orderGetTotal(order));
     }
     printf("-----------------------------------------------------\n");
 }

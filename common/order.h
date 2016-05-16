@@ -15,7 +15,7 @@ typedef struct order_entry_t* OrderEntry;
  * @param entryNum The entry number, 0-indexed.
  * @return The order entry or NULL if out of bounds.
  */
-OrderEntry order_get_entry(Order o, int entryNum);
+OrderEntry orderGetEntryNum(Order o, int entryNum);
 
 /**
  * Gets the product ID of the specified order entry.
@@ -23,7 +23,7 @@ OrderEntry order_get_entry(Order o, int entryNum);
  * @param e
  * @return 
  */
-int orderentry_get_id(OrderEntry e);
+int orderEntryGetId(OrderEntry e);
 
 /**
  * Gets the price of the product in the specified order entry.
@@ -31,7 +31,7 @@ int orderentry_get_id(OrderEntry e);
  * @param e
  * @return 
  */
-float orderentry_price(OrderEntry e);
+float orderEntryGetPrice(OrderEntry e);
 
 /**
  * Gets the quantity of the product in the specified order entry.
@@ -39,7 +39,7 @@ float orderentry_price(OrderEntry e);
  * @param e
  * @return 
  */
-int orderentry_get_quantity(OrderEntry e);
+int orderEntryGetQuantity(OrderEntry e);
 
 /**
  * Updates the quantity of the specified order entry to the new quantity.
@@ -47,13 +47,13 @@ int orderentry_get_quantity(OrderEntry e);
  * @param e The order entry to modify.
  * @param newQuantity The new quantity.
  */
-void orderentry_set_quantity(OrderEntry e, int newQuantity);
+void orderEntrySetQuantity(OrderEntry e, int newQuantity);
 
 /**
  * Gets the number of entries in the specified order.
  * @return 
  */
-int order_get_num_entries(Order o);
+int orderGetNumEntries(Order o);
 
 /**
  * Gets the total of the specified order.
@@ -61,7 +61,7 @@ int order_get_num_entries(Order o);
  * @param o
  * @return 
  */
-float order_get_total(Order o);
+float orderGetTotal(Order o);
 
 /**
  * Gets the address associated with this order.
@@ -69,7 +69,7 @@ float order_get_total(Order o);
  * @param order
  * @return The address, or NULL if none is saved.
  */
-char* order_get_addr(Order order);
+char* orderGetAddress(Order order);
 
 /**
  * Sets the delivery address in the specified order.
@@ -77,7 +77,7 @@ char* order_get_addr(Order order);
  * @param order
  * @param address
  */
-void order_set_addr(Order order, char * address);
+void orderSetAddress(Order order, char * address);
 
 
 /**
@@ -91,7 +91,7 @@ void order_set_addr(Order order, char * address);
  * @param price
  * @return 0 on success, -1 if this order can't have any more entries.
  */
-int order_add(Order order, int product_id, int quantity, float price);
+int orderAdd(Order order, int product_id, int quantity, float price);
 
 
 /**
@@ -99,21 +99,21 @@ int order_add(Order order, int product_id, int quantity, float price);
  * 
  * @param order
  */
-void order_print(Order order);
+void orderPrint(Order order);
 
 /**
  * Creates a new empty order.
  * 
  * @return 
  */
-Order order_new();
+Order orderNew();
 
 /**
  * Frees resources associated with the specified order.
  * 
  * @param order
  */
-void order_free(Order order);
+void orderFree(Order order);
 
 /**
  * Serializes the specified order in the specified destination byte array.
@@ -122,7 +122,7 @@ void order_free(Order order);
  * @param dest Where to serialize it.
  * @return The size (in bytes) of the serialized order.
  */
-size_t order_serialize(const Order o, void **dest);
+size_t orderSerialize(const Order o, void **dest);
 
 /**
  * Unserializes a serialized order.
@@ -130,6 +130,6 @@ size_t order_serialize(const Order o, void **dest);
  * @param data The serialized order.
  * @return The unserialized order.
  */
-Order order_unserialize(const void* data);
+Order orderUnserialize(const void* data);
 
 #endif /* order_h */

@@ -14,7 +14,7 @@ struct product_t {
     int stock;
 };
 
-Product newProduct(int id, const char *name, const char *description, const float price, const int stock) {
+Product productNew(int id, const char *name, const char *description, const float price, const int stock) {
     Product result = malloc(sizeof (*result));
     result->id = id;
     result->name = malloc(strlen(name) + 1);
@@ -26,17 +26,17 @@ Product newProduct(int id, const char *name, const char *description, const floa
     return result;
 }
 
-void freeProduct(Product p) {
+void productFree(Product p) {
     free(p->description);
     free(p->name);
     free(p);
 }
 
-void prettyPrintProduct(Product p) {
-    printf("*%s (#%i)*\n%s\nPrice: $%.2f\nStock: %i\n", getProductName(p), getProductId(p), getProductDescription(p), getProductPrice(p), getProductStock(p));
+void productPrint(Product p) {
+    printf("*%s (#%i)*\n%s\nPrice: $%.2f\nStock: %i\n", productGetName(p), productGetId(p), productGetDescription(p), productGetPrice(p), productGetStock(p));
 }
 
-size_t serializeProduct(const Product p, void **dest) {
+size_t productSerialize(const Product p, void **dest) {
     //TODO check for errors and return NULL
     int offset = 0;
     int nameLen = strlen(p->name) + 1;
@@ -59,7 +59,7 @@ size_t serializeProduct(const Product p, void **dest) {
     return totalLen;
 }
 
-Product unserializeProduct(const void* data) {
+Product productUnserialize(const void* data) {
     //TODO check for errors and return NULL
     Product result = malloc(sizeof (*result));
     int nameLen, descrLen, offset = 0;
@@ -81,27 +81,27 @@ Product unserializeProduct(const void* data) {
     return result;
 }
 
-int getProductId(Product p) {
+int productGetId(Product p) {
     return p->id;
 }
 
-char *getProductName(Product p) {
+char *productGetName(Product p) {
     return p->name;
 }
 
-char *getProductDescription(Product p) {
+char *productGetDescription(Product p) {
     return p->description;
 }
 
-float getProductPrice(Product p) {
+float productGetPrice(Product p) {
     return p->price;
 }
 
-int getProductStock(Product p) {
+int productGetStock(Product p) {
     return p->stock;
 }
 
-int setProductStock(Product p, int newStock) {
+int productSetStock(Product p, int newStock) {
     if(newStock < 0) {
         return 0;
     }
