@@ -89,6 +89,7 @@ void processOrder(Connection c) {
     free(serialized);
     //Wait for response...
     ensureRead(&code, sizeof(code), inFD);
+    printf("Got back %i\n", code);
     //Send back response code
     conn_send(c, &code, sizeof(code));
     //If needed, send back extra data

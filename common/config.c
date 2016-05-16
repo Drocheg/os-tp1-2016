@@ -301,7 +301,7 @@ char *getLoggingAddress(Config config) {
 
 
 /*********************/
-/* Auxiliar Function */
+/* Auxiliary Function */
 /*********************/
 
 int resize(char **str, int newSize) {

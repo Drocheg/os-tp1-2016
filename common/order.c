@@ -12,7 +12,7 @@ struct order_entry_t {
 struct order_t {
     char * address;
     int numEntries;
-    OrderEntry items[ORDER_MAX_SIZE]; //TODO hacer dinamico o que no te deje agregar más el cliente.
+    OrderEntry *items;
 };
 
 OrderEntry order_get_entry(Order o, int entryNum) {
@@ -42,12 +42,15 @@ Order order_new() {
     Order order = malloc(sizeof (*order));
     order->numEntries = 0;
     order->address = NULL;
+    order->items = calloc(ORDER_MAX_SIZE, sizeof(*(order->items)));
     return order;
 }
 
 void order_free(Order o) { //TODO free de address? Cuando le doy espacio? 
     for (int i = 0; i < o->numEntries; i++) {
-        free(o->items[i]);
+        if(o->items[i] != NULL) {
+            free(o->items[i]);
+        }
     }
     free(o);
 }
@@ -107,9 +110,9 @@ size_t order_serialize(const Order o, void **dest) {
     //TODO check for errors and return NULL
     int offset = 0;
     size_t addressLen = o->address == NULL ? 0 : strlen(o->address) + 1;
-    size_t totalLen = sizeof (addressLen) + addressLen + sizeof (o->numEntries) + (sizeof (o->items) * sizeof (*(o->items[0])));    //TODO verify sum is correct
+    size_t totalLen = sizeof (addressLen) + addressLen + sizeof(o->numEntries) + (o->numEntries * sizeof(struct order_entry_t));
     *dest = malloc(totalLen);
-    memcpy(*dest, &addressLen, sizeof (addressLen));
+    memcpy(*dest + offset, &addressLen, sizeof (addressLen));
     offset += sizeof (addressLen);
     if(addressLen > 0) {
         memcpy(*dest + offset, o->address, addressLen);
@@ -130,15 +133,12 @@ size_t order_serialize(const Order o, void **dest) {
 
 Order order_unserialize(const void* data) {
     //TODO check for errors and return NULL
-    Order result = malloc(sizeof (*result));
-    size_t addressLen;
+    Order result = order_new();
+    size_t addressLen = -1;
     int offset = 0;
-    memcpy(&addressLen, data, sizeof (addressLen));
+    memcpy(&addressLen, data + offset, sizeof (addressLen));
     offset += sizeof (addressLen);
-    if(addressLen == 0) {
-        result->address = NULL;
-    }
-    else {
+    if(addressLen > 0) {
         result->address = malloc(addressLen);
         strncpy(result->address, data + offset, addressLen);
     }
@@ -147,6 +147,7 @@ Order order_unserialize(const void* data) {
     offset += sizeof (result->numEntries);
     for(int i = 0; i < result->numEntries; i++) {
         result->items[i] = malloc(sizeof(*(result->items[i])));
+        int la = sizeof(*(result->items[i]));   //TODO remove
         memcpy(&(result->items[i]->product_id), data+offset, sizeof(result->items[i]->product_id));
         offset += sizeof(result->items[i]->product_id);
         memcpy(&(result->items[i]->quantity), data+offset, sizeof(result->items[i]->quantity));

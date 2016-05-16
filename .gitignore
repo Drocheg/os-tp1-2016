@@ -14,6 +14,8 @@ netbeans/*
 Flowchart.vsdx
 docs/SQLite/*
 testing/*
+db
+*/db
 
 # Object files
 *.o
