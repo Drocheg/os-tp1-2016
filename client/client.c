@@ -153,7 +153,7 @@ void addToOrder(int index, Product *products, Order order) {
     } while (!done);
 }
 
-void shutdown(int signo) {
+void shutDown(int signo) {
     if (signo != SIGINT)
         return;
 
@@ -162,9 +162,11 @@ void shutdown(int signo) {
     exit(0);
 }
 
-void disconnect(Connection c) {
+void disconnect() {
     int messageCode = MESSAGE_CLOSE;
-    conn_send(c, &messageCode, sizeof (messageCode));
+    conn_send(conn, &messageCode, sizeof (messageCode));
+    conn_close(conn);
+    conn = NULL;
     return;
 }
 
