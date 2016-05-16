@@ -250,7 +250,7 @@ static int createProcessFIFOs(const char* basePath, Connection c) {
 }
 
 static int sendFIFOPaths(Connection c, const char* mainServerFIFO) {
-    int fd = open(mainServerFIFO, O_WRONLY);    //This will block if the main server isn't reading at the address
+    int fd = open(mainServerFIFO, O_WRONLY|O_NONBLOCK);    //This will block if the main server isn't reading at the address
     int lock = flock(fd, LOCK_EX);
     if(lock != 0) { //Couldn't obtain lock for some bizarre reason
         return 0;

@@ -227,22 +227,30 @@ int submitOrder(Order *order) {
 
     //Order ready, place order
     int messageCode = CMD_PLACE_ORDER;
-    conn_send(conn, &messageCode, sizeof (messageCode)); //TODO abort if these fail
+    if(!conn_send(conn, &messageCode, sizeof (messageCode))) {
+        return -1;
+    }
     void * buff;
     size_t buffSize;
     buffSize = orderSerialize(*order, &buff);
-    conn_send(conn, buff, buffSize);
+    if(!conn_send(conn, buff, buffSize)) {
+        return -1;
+    }
     free(buff);
     //Order sent, parse response
     int responseCode;
-    conn_receive(conn, &buff, NULL); //The first part of the response will be an int, ignore length
+    if(!conn_receive(conn, &buff, NULL)) {  //The first part of the response will be an int, ignore length
+        return -1;
+    } 
     responseCode = *((int*) buff);
     free(buff);
-    if (responseCode == MESSAGE_ERROR) { //TODO abort?
+    if (responseCode == MESSAGE_ERROR) {
         return -1;
     }
     else if (responseCode == MESSAGE_UNSATISFIABLE_ORDER) {
-        conn_receive(conn, &buff, &buffSize);
+        if(!conn_receive(conn, &buff, &buffSize)) {
+            return -1;
+        }
         orderFree(*order);
         *order = orderUnserialize(buff);
         return 0;
