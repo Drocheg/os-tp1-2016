@@ -76,6 +76,9 @@ int main(int argc, char** argv) {
             case 2:
                 do {
                     option = scanInt("Which product number would you like to add to your order?\nEnter 0 to cancel\n");
+                    if(option < 0 || option > numProducts){
+                        printf("Invalid product number\n");
+                    }
                 } while (option < 0 || option > numProducts);
                 if (option != 0) {
                     addToOrder(option - 1, products, order);
