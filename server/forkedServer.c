@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-int getProdcuts(Product **destArray);
+int getProducts(Product **destArray);
 
 void sendProducts(Connection c);
 
@@ -56,7 +56,7 @@ void forkedServer(Connection c) {
 
 void sendProducts(Connection c) {
     Product* products;
-    int numProducts = getProdcuts(&products);
+    int numProducts = getProducts(&products);
     int responseCode;
     if (numProducts == -1) {
         responseCode = MESSAGE_ERROR;
@@ -113,7 +113,7 @@ void shut_down(Connection c) {
     conn_close(c);
 }
 
-int getProdcuts(Product **destArray) {
+int getProducts(Product **destArray) {
     int outFD = sh_conn_get_out_fd(dbConn),
             inFD = sh_conn_get_in_fd(dbConn);
     sh_conn_open(dbConn);
@@ -130,11 +130,11 @@ int getProdcuts(Product **destArray) {
     *destArray = malloc(sizeof (**destArray) * code);
     for (int i = 0; i < code; i++) {
         size_t serializedLen;
-        if(!(ensureRead(&serializedLen, sizeof (serializedLen), inFD)){
+        if(!ensureRead(&serializedLen, sizeof (serializedLen), inFD)){
             return -1;
         } 
         void* serialized = malloc(serializedLen);
-        if(ensureRead(serialized, serializedLen, inFD)){
+        if(!ensureRead(serialized, serializedLen, inFD)){
             return -1;
         }
         (*destArray)[i] = productUnserialize(serialized);
